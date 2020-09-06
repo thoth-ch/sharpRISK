@@ -1,0 +1,15 @@
+name: "sharpRISK"
+navbar:
+  title: "sharpRISK"
+  left:
+    - text: "home"
+      href: index.html
+    - text: "reference"
+      href: reference.html
+output:
+  html_document:
+    css: www/style.css
+    include:
+      after_body: footer.html
+output_dir: "docs"
+exclude: ["*.db", "*.xlsx", "*.ppt", "*.mmap"]

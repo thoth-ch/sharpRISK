@@ -1,0 +1,17 @@
+h1, h2, h3, h4 {
+    color: #337AB7;
+}
+
+body {
+    font-family: "Verdana", serif;
+    color: #333333;
+}
+a, a:hover {
+    color: #337AB7;
+}
+pre {
+    font-size: 10px;
+}
+.articlehead {
+  font-weight: bold;
+}

@@ -1,0 +1,29 @@
+---
+pagetitle: "Profile"
+---
+```{r setup, echo = FALSE, warning = FALSE}
+# Web address for this site
+# https://github.com/J-Ramalho/sharpRISK/
+
+library(htmltools)
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+div(img(src = "img/mountaintop30.png",
+        alt = "sharpRISK",
+        style = "border-radius: 100%"
+        ),
+    div(h1("sharpRISK"),
+        h3("nlp risk management")
+      )
+    )
+```
+
+sharpRISK aims transforming risk management in the manufacturing industry. 
+It combines well established risk identification and mitigation approaches with new natural language processing capabilities.
+
+
+
+
+
