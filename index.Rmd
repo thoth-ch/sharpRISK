@@ -15,7 +15,7 @@ div(img(src = "img/mountaintop30.png",
         style = "border-radius: 100%"
         ),
     div(h1("sharpRISK"),
-        h3("nlp risk management")
+        h4("risk management with natural language processing")
       )
     )
 ```
@@ -23,7 +23,7 @@ div(img(src = "img/mountaintop30.png",
 sharpRISK aims transforming risk management in the manufacturing industry. 
 It combines well established risk identification and mitigation approaches with new natural language processing capabilities.
 
-
+sharpRISK can be fully tested at its [demo site](https://red-datafactory.shinyapps.io/sharprisk/)
 
 
 
