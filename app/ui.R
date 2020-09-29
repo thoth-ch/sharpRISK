@@ -22,8 +22,6 @@ shinyUI(fluidPage(
             tags$br(),
             sidebarLayout(
                 sidebarPanel(
-                    tags$b("Select Input"),
-                    tags$hr(),
                     textInput(
                         inputId = "risk_owner",
                         label = "Risk Owner")
@@ -37,8 +35,6 @@ shinyUI(fluidPage(
             tags$br(),
             sidebarLayout(
                 sidebarPanel(
-                    tags$b("Select Input"),
-                    tags$hr(),
                 ),
                 mainPanel(
                     plotOutput("top10words")
@@ -50,7 +46,7 @@ shinyUI(fluidPage(
         #          tags$br(),
         #     sidebarLayout(
         #         sidebarPanel(
-        #             tags$b("Select Input"),
+        #             tags$b("Inputs selection"),
         #             tags$hr(),
         #         ),
         #         mainPanel(
@@ -61,24 +57,20 @@ shinyUI(fluidPage(
         tabPanel("Risk Management",
             tags$br(),
             sidebarLayout(
-            sidebarPanel(
+            sidebarPanel(width = 2,
                 numericInput(
                     inputId = "risk_number",
                     value = 1,
                     label = "Risk number",
                     width = 100
                 ),
-                       tags$b("Select Input"),
                        hr(),
-                       actionButton("update_risk", "Update Risk"),
+                       actionButton(width = 100, "update_risk", "Update Risk"),
                        br(), br(),
-                       actionButton("delete_risk", "Delete Risk")
+                       actionButton(width = 100, "delete_risk", "Delete Risk")
                        ),
             mainPanel(
-                column(12,
                     column(10,
-                        br(),
-                        
                         uiOutput("risk_name"),
                         uiOutput("risk_description"),
                         br(),
@@ -98,16 +90,15 @@ shinyUI(fluidPage(
                         #            rows = 6, cols = 50
                         #            ),
                     ))
-                
-            )
             ),
             sidebarLayout(
-                sidebarPanel("test1"),
-                mainPanel(
-                    tags$b("Actions"),
-                    br(),
-                    br(),
-                    DT::dataTableOutput("actionsDT")
+            sidebarPanel(width = 2, 
+                uiOutput("action_number"),
+                    ),
+            mainPanel(
+                column(12,
+                    uiOutput("action_description")
+                )
                 )
             )
 

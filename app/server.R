@@ -12,17 +12,22 @@ library(htmltools)
 
 # Server function ----
 server <- function(input, output) {
-    # Declare global variables ----
+# Database connection ----
     riskdb_path <- "database/risks.db"
+    # riskdb_path <- "../app/database/venus_expert.db"
     riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
+# Declare global variables ----
     risk_fields <- c("risk_number",
                      "risk_name",
                      "risk_description",
                      "risk_impact",
                      "risk_probability"
     )
-# these are generic functions to be called by the reactive functions
-# Heatmap ----
+    action_fields <- c("action_number",
+                       "risk_number",
+                       "action_description", 
+                       "action_responsible")
+# Load risks and actions
     load_risks <- function() {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
         query <- "SELECT * FROM risks"
@@ -30,6 +35,24 @@ server <- function(input, output) {
         dbDisconnect(riskdb_conn)
         risks
     }
+    load_actions <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        query <- "SELECT * FROM actions"
+        actions <- dbGetQuery(riskdb_conn, query) %>%
+            mutate(action_deadline = ymd(as.integer(action_deadline)))
+        dbDisconnect(riskdb_conn)
+        actions
+    }
+    load_actions_by_risk <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        query <- glue(
+            "SELECT * FROM actions WHERE risk_number = {input$risk_number}")
+        actions <- dbGetQuery(riskdb_conn, query) %>%
+            mutate(action_deadline = ymd(as.integer(action_deadline)))
+        dbDisconnect(riskdb_conn)
+        actions
+    }
+# Heatmap ----
     heatmap_tiles <- tribble(
         ~impact, ~probability, ~tile_color,
         1, 1, "yellow",
@@ -86,7 +109,8 @@ server <- function(input, output) {
             geom_text_repel(aes(label = glue("{risk_number} - {risk_name}"),
                                 color = r_color,
                                 hjust = "left",
-                                nudge_x = 1)) +
+                                nudge_x = 1),
+                            segment.color = NA) +
             scale_x_continuous(breaks = c(0, 1, 2, 3, 4),
                                limits = c(0.5, 4.5)) +
             scale_y_continuous(breaks = c(0, 1, 2, 3, 4),
@@ -125,12 +149,7 @@ server <- function(input, output) {
                  y = "Number of occurrences",
                  x = "")
     })
-# Risk list ----
-    output$risksDT <- DT::renderDataTable({
-        input$update_risk | input$delete_risk
-        load_risks()
-    })
-# Manage risks ----
+# Functions for database query ----
     get_risk_data <- function(number, risk_fields) {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
         risk_fields_str <- paste(risk_fields, collapse = ", ")
@@ -141,24 +160,47 @@ server <- function(input, output) {
         dbDisconnect(riskdb_conn)
         risk_data
     }
+    get_action_data <- function(number, action_fields) {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        action_fields_str <- paste(action_fields, collapse = ", ")
+        query <- glue(
+            "SELECT {action_fields_str} FROM actions WHERE action_number = {number}"
+        )
+        action_data <- dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+        action_data
+    }
+# Functions for fields output in risk management form----
     get_risk_name <- reactive({
             get_risk_data(input$risk_number, risk_fields) %>% pull(risk_name)
     })
     output$risk_name <- renderUI({
         textInput(inputId = "selected_risk_name",
                   label = "Risk Name",
-                  width = 400,
+                  width = 600,
                   value = get_risk_name())
     })
     get_risk_description <- reactive({
             get_risk_data(input$risk_number, risk_fields) %>% pull(risk_description)
     })
     output$risk_description <- renderUI({
-        textAreaInput(width = 400,
-                      height = 100,
+        textAreaInput(
+            width = 600,
+            height = 200,
             inputId = "selected_risk_description",
             label = "Risk Description",
             value = get_risk_description())
+    })
+    get_action_description <- reactive({
+        get_action_data(input$selected_action_number, action_fields) %>% pull(action_description)
+    })
+    output$action_description <- renderUI({
+        textAreaInput(
+            width = 600,
+            height = 200,
+            inputId = "selected_action_description",
+            label = "Action Description",
+            value = get_action_description())
     })
     get_risk_impact <- reactive({
             get_risk_data(input$risk_number, risk_fields) %>% pull(risk_impact)
@@ -220,27 +262,24 @@ server <- function(input, output) {
     observeEvent(input$delete_risk, {
         delete_risk()
     })
-    load_actions <- function() {
-        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
-        query <- "SELECT * FROM actions"
-        actions <- dbGetQuery(riskdb_conn, query) %>%
-            mutate(action_deadline = ymd(as.integer(action_deadline)))
-        dbDisconnect(riskdb_conn)
-        actions
-    }
-    load_actions_by_risk <- function() {
-        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
-        query <- glue(
-            "SELECT * FROM actions WHERE risk_number = {input$risk_number}")
-        actions <- dbGetQuery(riskdb_conn, query) %>%
-            mutate(action_deadline = ymd(as.integer(action_deadline)))
-        dbDisconnect(riskdb_conn)
-        actions
-    }
-    output$actionsDT <- DT::renderDataTable({
-        # input$update_action | input$delete_action
-        load_actions_by_risk() 
+    output$action_number <- renderUI({
+        selectInput(inputId = "selected_action_number",
+                    label = "Action number",
+                    width = 100,
+                    choices = load_actions_by_risk() %>% pull(action_number),
+                    selected = load_actions_by_risk() %>% 
+                        pull(action_number) %>% first())
     })
+
+
+
+    
+    
+    
+    # output$actionsDT <- DT::renderDataTable({
+    #     # input$update_action | input$delete_action
+    #     load_actions_by_risk() 
+    # })
 }
 
 # shinyApp(ui = htmlTemplate("index.html"), server)
