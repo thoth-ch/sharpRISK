@@ -1,0 +1,13 @@
+name: sharpRISK
+title: sharpRISK
+username:
+account: red-datafactory
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2760391
+bundleId: 3649740
+url: https://red-datafactory.shinyapps.io/sharprisk/
+when: 1600634656.75586
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app_bkp.R

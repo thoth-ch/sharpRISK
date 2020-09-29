@@ -1,0 +1,13 @@
+name: sharpRISK
+title: sharpRISK
+username:
+account: emergingfactory
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2760391
+bundleId: 3683144
+url: https://emergingfactory.shinyapps.io/sharprisk/
+when: 1601385542.78112
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app_bkp.R|www/index.html
