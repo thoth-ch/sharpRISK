@@ -21,7 +21,7 @@ shinyUI(fluidPage(
         tabPanel("Heatmap",
             tags$br(),
             sidebarLayout(
-                sidebarPanel(
+                sidebarPanel(width = 2,
                     textInput(
                         inputId = "risk_owner",
                         label = "Risk Owner")
@@ -34,25 +34,13 @@ shinyUI(fluidPage(
         tabPanel("Text Analysis",
             tags$br(),
             sidebarLayout(
-                sidebarPanel(
+                sidebarPanel(width = 2,
                 ),
                 mainPanel(
                     plotOutput("top10words")
                 )
             )
         ),
-        # Risks ----
-        # tabPanel("Risks",
-        #          tags$br(),
-        #     sidebarLayout(
-        #         sidebarPanel(
-        #             tags$b("Inputs selection"),
-        #             tags$hr(),
-        #         ),
-        #         mainPanel(
-        #             DT::dataTableOutput("risksDT"))   
-        #         )
-        #     ),
         # Risk Management ----
         tabPanel("Risk Management",
             tags$br(),
@@ -65,7 +53,7 @@ shinyUI(fluidPage(
                     width = 100
                 ),
                        hr(),
-                       actionButton(width = 100, "update_risk", "Update Risk"),
+                       actionButton(width = 100, "save_risk", "Save Risk"),
                        br(), br(),
                        actionButton(width = 100, "delete_risk", "Delete Risk")
                        ),
@@ -79,21 +67,15 @@ shinyUI(fluidPage(
                         br(),
                         uiOutput("risk_impact"),
                         uiOutput("risk_probability"),
-                        # textAreaInput(label = "Text test",
-                        #               inputId = "free_text"
-                        #               ),
-                        # class = "column-border",
-                        # htmlOutput(outputId = "risk_description",
-                        #            class = "input-field",
-                        #            # inline = TRUE,
-                        #            container = tags$textarea,
-                        #            rows = 6, cols = 50
-                        #            ),
                     ))
             ),
             sidebarLayout(
             sidebarPanel(width = 2, 
                 uiOutput("action_number"),
+                actionButton(width = 100, "update_action", "Save Action"),
+                br(), br(),
+                actionButton(width = 100, "delete_action", "Delete Action"),
+                # actionButton("delete_action")
                     ),
             mainPanel(
                 column(12,
