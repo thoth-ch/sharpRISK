@@ -1,0 +1,19 @@
+notes for implementing a risk update tab
+
+# user experience
+
+input the risk number
+see the risk fields appear completed with the current info (if the risk exists)
+modify the text in any field as desired
+click save button when ready
+
+# ideas for implementation
+
+1. add input field to collect risk number (exist already)
+2. reactive function to check if input field exists and to trigger population of other fields
+3. function to query data base and retrieve the other fields
+4. other fields need to be reactive to get input from backend when risk retrieve function runs
+
+5. function to update the risk in the data base in two steps: 
+5.1. first delete the current risk data from the data base 
+5.2. second insert the new risk in the data base

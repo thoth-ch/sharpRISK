@@ -1,0 +1,149 @@
+---
+title: "heatmap_sql"
+output: html_document
+---
+
+# Setup
+
+```{r}
+library(readxl)
+library(DBI)
+library(RSQLite)
+```
+
+```{r setup}
+# Define connection to database (or create it if it doesn't exist)
+
+# test with Tesla like data
+# riskdb_path <- "../app/database/risks.db"
+# heatxl_path <- "../support_files/heatmap.xlsx"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+# test with real data (not public)
+riskdb_path <- "../app/database/venus_expert.db"
+heatxl_path <- "../support_files/venus_expert_risks.xlsx"
+heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+
+knitr::opts_chunk$set(connection = "heat_conn")
+```
+
+
+
+# Create tables
+
+## Risks
+
+```{sql}
+CREATE TABLE risks (
+  risk_number integer primary key,
+  risk_name text,
+  risk_description text,
+  risk_impact integer,
+  risk_probability integer
+);
+```
+
+## Actions
+
+```{sql}
+CREATE TABLE actions (
+  action_number integer primary key,
+  risk_number integer REFERENCES risks (risk_number),
+  action_description text,
+  action_responsible text,
+  action_deadline text
+);
+```
+
+# List all tables and fields
+```{sql}
+SELECT
+  m.name AS table_name, 
+  p.cid AS col_id,
+  p.name AS col_name,
+  p.type AS col_type,
+  p.pk AS col_is_pk,
+  p.dflt_value AS col_default_val,
+  p.[notnull] AS col_is_not_null
+FROM sqlite_master m
+LEFT OUTER JOIN pragma_table_info((m.name)) p
+  ON m.name <> p.name
+WHERE m.type = 'table'
+ORDER BY table_name, col_id
+```
+
+# Upload data
+
+## Risks
+```{r}
+dbWriteTable(conn = heat_conn,
+             append = TRUE,
+             name = "risks",
+             value = read_xlsx(path = heatxl_path,
+                               sheet = "risks", na = "")
+             )
+```
+
+## Actions
+
+```{r}
+dbWriteTable(conn = heat_conn,
+             append = TRUE,
+             name = "actions",
+             value = read_xlsx(path = heatxl_path,
+                               sheet = "actions", na = "")
+             )
+```
+
+# Display data
+
+## Risks
+```{sql}
+SELECT *
+FROM "risks"
+```
+
+## Actions
+```{sql}
+SELECT *
+FROM "actions"
+```
+# Delete data
+
+## Risks
+```{sql}
+DELETE FROM risks
+-- WHERE risk_number = 17
+```
+
+## Actions
+```{sql}
+DELETE FROM actions
+```
+
+# Remove table
+
+## Risks
+```{sql}
+DROP TABLE risks;
+```
+
+## Actions
+```{sql}
+DROP TABLE actions;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

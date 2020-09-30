@@ -18,13 +18,13 @@ shinyUI(fluidPage(
     tabsetPanel(
         type = "tabs",
         # Heatmap ----
-        tabPanel("Heatmap",
+        tabPanel("Criticality analysis",
             tags$br(),
             sidebarLayout(
                 sidebarPanel(width = 2,
                     textInput(
-                        inputId = "risk_owner",
-                        label = "Risk Owner")
+                        inputId = "deparment",
+                        label = "Department")
                 ),
                 mainPanel(
                     plotOutput("heatmap"))
@@ -35,9 +35,15 @@ shinyUI(fluidPage(
             tags$br(),
             sidebarLayout(
                 sidebarPanel(width = 2,
+                    textInput(
+                        inputId = "deparment",
+                        label = "Department")                           
                 ),
                 mainPanel(
+                    column(6,
                     plotOutput("top10words")
+                    ),
+                    column(6)
                 )
             )
         ),
@@ -50,12 +56,12 @@ shinyUI(fluidPage(
                     inputId = "risk_number",
                     value = 1,
                     label = "Risk number",
-                    width = 100
+                    width = 120
                 ),
                        hr(),
-                       actionButton(width = 100, "save_risk", "Save Risk"),
+                       actionButton(width = 120, "save_risk", "Save Risk"),
                        br(), br(),
-                       actionButton(width = 100, "delete_risk", "Delete Risk")
+                       actionButton(width = 120, "delete_risk", "Delete Risk")
                        ),
             mainPanel(
                     column(10,
@@ -72,9 +78,9 @@ shinyUI(fluidPage(
             sidebarLayout(
             sidebarPanel(width = 2, 
                 uiOutput("action_number"),
-                actionButton(width = 100, "update_action", "Save Action"),
+                actionButton(width = 120, "save_action", "Save Action"),
                 br(), br(),
-                actionButton(width = 100, "delete_action", "Delete Action"),
+                actionButton(width = 120, "delete_action", "Delete Action"),
                 # actionButton("delete_action")
                     ),
             mainPanel(

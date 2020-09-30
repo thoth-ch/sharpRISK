@@ -13,8 +13,8 @@ library(htmltools)
 # Server function ----
 server <- function(input, output) {
 # Database connection ----
-    # riskdb_path <- "database/risks.db"
-    riskdb_path <- "../app/database/venus_expert.db"
+    riskdb_path <- "database/risks.db"
+    # riskdb_path <- "../app/database/venus_expert.db"
     riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 # Declare global variables ----
     risk_fields <- c("risk_number",
@@ -92,7 +92,7 @@ server <- function(input, output) {
         load_risks() %>%
             mutate(r_color = risk_color_bw(
                 risk_impact, risk_probability)) %>%
-            ggplot(aes(x = as.integer(risk_impact), y = as.integer(risk_probability))) +
+            ggplot(aes(x = risk_impact, y = risk_probability)) +
             geom_tile(data = heatmap_tiles, 
                       aes(x = impact, y = probability, 
                           fill = tile_color,
@@ -100,21 +100,20 @@ server <- function(input, output) {
             # geom_point() +
             geom_text_repel(aes(label = glue("{risk_number} - {risk_name}"),
                                 color = r_color,
-                                size = 12,
-                                hjust = "left",
-                                nudge_x = 1),
+                                size = 12
+                                ),
                             segment.color = NA) +
-            scale_x_discrete(breaks = c(0, 1, 2, 3, 4),
-                               limits = c(0.5, 4.5)) +
-            scale_y_discrete(breaks = c(0, 1, 2, 3, 4),
-                               limit = c(0.5, 4.5)) +
+            scale_x_continuous(breaks = c(0, 1, 2, 3, 4)) +
+            scale_y_continuous(breaks = c(0, 1, 2, 3, 4)) +
             scale_fill_identity() +
             scale_color_identity() +
             theme_minimal() +
-            labs(x = "Risk Impact",
+            labs(title = "Heatmap",
+                 x = "Risk Impact",
                  y = "Risk Probability") +
             theme(legend.position = "none",
-                  panel.grid = element_blank())
+                  panel.grid = element_blank(),
+                  plot.title = element_text(hjust = 0.5))
         
     })
 # Text Analysis -------------------------------
@@ -131,16 +130,18 @@ server <- function(input, output) {
         risks_tidy %>%
             count(word, sort = TRUE) %>%
             head(10) %>%
+            filter(!is.na(word)) %>%
             mutate(word = fct_inorder(word)) %>%
             mutate(word = fct_rev(word)) %>%
             ggplot(aes(y = n, x = word)) +
             geom_col(fill = "darkred", alpha = 0.7) +
             coord_flip() +
             theme_minimal() +
-            labs(title = "Top ten words on risk descriptions",
+            labs(title = "Top ten words",
                  subtitle = "",
-                 y = "Number of occurrences",
-                 x = "")
+                 y = "Number of appearances",
+                 x = "",
+                 plot.title = element_text(hjust = 0.5))
     })
 # Display the name of the selected risk ----
     output$risk_name <- renderUI({
@@ -166,7 +167,7 @@ server <- function(input, output) {
     output$action_number <- renderUI({
         selectInput(inputId = "selected_action_number",
                     label = "Action number",
-                    width = 100,
+                    width = 120,
                     choices = load_actions_by_risk() %>% pull(action_number),
                     selected = load_actions_by_risk() %>% 
                         pull(action_number) %>% first())
@@ -212,7 +213,7 @@ server <- function(input, output) {
     get_risk_probability <- reactive({
         get_risk_data(input$risk_number, risk_fields) %>% pull(risk_probability)
     })   
-# Display the decription of the selected action ----
+# Display the description of the selected action ----
     output$action_description <- renderUI({
         textAreaInput(
             width = 600,
@@ -276,7 +277,48 @@ server <- function(input, output) {
                                  input$risk_number)
         dbGetQuery(riskdb_conn, delete_risk_query)
     }
-
+# Save the selected action ----
+    observeEvent(input$save_action, {
+        save_action(aggregate_action_data())
+    })
+    aggregate_action_data <- reactive({
+        aggregated_actions <- sapply(selected_action_fields, 
+                                   function(x) {input[[x]]})
+        aggregated_actions
+    })
+    selected_action_fields <- c("selected_action_number",
+                                "risk_number",
+                              "selected_action_description",
+                              "selected_action_responsible",
+                              "selected_action_deadline")
+    save_action <- function(x) {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        # Construct the update query by looping over the data fields
+        names(x) <- c("action_number",
+                      "risk_number",
+                      "action_description",
+                      "action_responsible",
+                      "action_deadline")
+        if (input$selected_action_number %in% (load_actions() %>% pull(action_number))) {
+            delete_action()
+        }
+        query <- sprintf(
+            "INSERT INTO actions (%s) VALUES ('%s')",
+            paste(names(x), collapse = ", "),
+            paste(x, collapse = "', '"))
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+    }
+    # Delete the selected action ----
+    observeEvent(input$delete_action, {
+        delete_action()
+    })
+    delete_action <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        delete_action_query <- sprintf("DELETE FROM actions WHERE action_number = %s",
+                                     input$selected_action_number)
+        dbGetQuery(riskdb_conn, delete_action_query)
+    }
 }
 
 # shinyApp(ui = htmlTemplate("index.html"), server)
