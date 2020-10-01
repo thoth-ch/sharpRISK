@@ -1,0 +1,592 @@
+---
+title: "raw_code"
+output: html_document
+---
+# SETUP ----
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(DBI)
+library(RSQLite)
+library(glue)
+library(ggimage)
+library(magick)
+library(ggrepel)
+
+# test with Tesla like data
+riskdb_path <- "risks.db"
+riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
+
+# test with real data (not public)
+# riskdb_path <- "../app/database/venus_expert.db"
+# heatxl_path <- "../support_files/venus_expert_risks.xlsx"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+# Insert at the end of the server.R in case the ui is an html file
+# shinyApp(ui = htmlTemplate("index.html"), server)
+knitr::opts_chunk$set(connection = "riskdb_conn")
+```
+
+# Global variables
+```{r}
+risk_fields <- c("risk_number",
+                 "risk_name",
+                 "risk_description",
+                 "risk_impact",
+                 "risk_probability"
+)
+```
+
+# shiny input variables
+```{r}
+input <- list()
+input$risk_number <- 1
+# input$risk_name <- "risk5"
+input$risk_description
+input$risk_impact
+input$risk_probability
+input$update_risk # risk form submit risk button
+input$delete_risk # risk form delete risk button
+input$selected_action_number <- 1004
+```
+
+# shiny output variables
+```{r}
+input$selected_risk_number
+input$selected_risk_name
+input$selected_risk_description
+input$selected_risk_impact
+input$selected_risk_probability
+```
+
+# DATA LOADING AND SAVING
+
+# load risks
+```{r}
+load_risks <- function() {
+  riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+  query <- sprintf("SELECT * FROM risks")
+  risks <- dbGetQuery(riskdb_conn, query)
+  dbDisconnect(riskdb_conn)
+  risks
+    }
+```
+
+testing the function
+```{r}
+risks <- load_risks()
+risks
+load_risks() %>% pull(risk_number)
+```
+# top 5 risks table
+```{r}
+risks <- load_risks() %>% 
+            mutate(criticality = risk_probability * risk_impact) %>%
+            # filter(!is.na(criticality)) %>%
+            arrange(desc(criticality))
+            # slice_max(criticality, 5)
+
+risks
+```
+
+
+
+# load actions
+```{r}
+    load_actions <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        query <- sprintf("SELECT * FROM actions")
+        actions <- dbGetQuery(riskdb_conn, query) %>%
+          mutate(action_deadline = ymd(as.integer(action_deadline)))
+        dbDisconnect(riskdb_conn)
+        actions
+    }
+```
+
+testing the function
+```{r}
+actions <- load_actions()
+load_actions() %>% pull(action_number)
+```
+# load actions by risk
+
+```{r}
+    load_actions_by_risk <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        query <- sprintf("SELECT * FROM actions WHERE risk_number = %s",
+                         input$risk_number)
+        actions <- dbGetQuery(riskdb_conn, query) %>%
+          mutate(action_deadline = ymd(as.integer(action_deadline)))
+        dbDisconnect(riskdb_conn)
+        actions
+    }
+```
+
+```{r}
+test <- load_actions_by_risk()
+test %>% pull(action_number)
+```
+
+# converting date
+```{r}
+actions <- load_actions()
+
+actions <- actions %>% 
+  mutate(action_deadline = ymd(as.integer(action_deadline)))
+actions
+```
+
+# get risk data
+```{r}
+load_risk <- function(number, risk_fields) {
+  riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+  query <- sprintf("SELECT %s FROM risks WHERE risk_number = %s",
+                   paste(risk_fields, collapse = ", "),
+                   input$risk_number
+                   )
+  risk_data <- dbGetQuery(riskdb_conn, query)
+  dbDisconnect(riskdb_conn)
+  risk_data
+}
+```
+
+testing the function, first the sql part created by sprintf
+```{sql}
+SELECT risk_number, risk_name, risk_description, risk_impact, risk_probability FROM risks WHERE risk_number = 17
+```
+
+then all the function
+```{r}
+load_risk(input$risk_number, risk_fields)
+load_risk(input$risk_number, risk_fields) %>% pull(risk_name)
+```
+
+now testing the assignment to a vector for further use in R code
+```{r}
+risk_data <- load_risk(17, risk_fields)
+class(risk_data)
+risk_data$risk_number
+risk_data$risk_description
+```
+
+# aggregate risk form data
+```{r}
+aggregate_risk_data <- reactive({
+        fields <- c("risk_name", "risk_number")
+        data <- sapply(fields, function(x) input[[x]])
+        data
+    })
+```
+
+making the function non reactive for testing
+```{r}
+aggregate_risk_data <- function(x) {
+        fields <- c("risk_name", "risk_number")
+        aggregated_risks <- sapply(fields, function(x) input[[x]])
+        aggregated_risks
+    }
+```
+
+testing the function
+```{r}
+aggregate_risk_data(input)
+```
+simulating the vector of the aggregated risk data for utilisation by the subsequent functions
+```{r}
+risk_test_vector <- aggregate_risk_data(input)
+risk_test_vector
+```
+
+# save risks sql instruction
+```{r}
+save_risk <- function(x) {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        # Construct the update query by looping over the data fields
+        query <- sprintf(
+            "INSERT INTO risks (%s) VALUES ('%s')",
+            paste(names(x), collapse = ", "),
+            paste(x, collapse = "', '")
+        )
+        # Submit the update query and disconnect
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+    }
+```
+
+testing the function
+```{r}
+save_risk(risk_test_vector)
+```
+
+# select risk sql instruction
+```{r}
+delete_risk <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        delete_risk_query <- sprintf(
+            "DELETE FROM risks WHERE risk_number = %s",
+            input$risk_number
+        )
+        # Submit the update query and disconnect
+        dbGetQuery(riskdb_conn, delete_risk_query)
+        dbDisconnect(riskdb_conn)
+    }
+```
+
+test the function
+```{r}
+delete_risk()
+```
+
+# update risk
+```{r}
+    # aggregate risk form data
+    selected_risk_fields <- c("risk_number",
+                              "selected_risk_name",
+                              "selected_risk_description",
+                              "selected_risk_impact",
+                              "selected_risk_probability")
+    aggregate_risk_data <- function() {
+        aggregated_risks <- sapply(selected_risk_fields, function(x) input[[x]])
+        aggregated_risks
+    }
+    # save risk sql instruction ----
+    update_risk <- function(x) {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        # Construct the update query by looping over the data fields
+        names(x) <- c("risk_number",
+                      "risk_name",
+                      "risk_description",
+                      "risk_impact",
+                      "risk_probability")
+        if (input$risk_number %in% (load_risks() %>% pull(risk_number))) {
+          delete_risk
+        }
+        query <- sprintf(
+            "INSERT INTO risks (%s) VALUES ('%s')",
+            paste(names(x), collapse = ", "),
+            paste(x, collapse = "', '"))
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+    }
+    # save risk data on click ----
+    observeEvent(input$update_risk, {
+        save_risk(aggregate_risk_data())
+    })
+```
+testing the function
+```{r}
+update_risk(5)
+```
+# Risk list ----
+```{r}
+    output$risksDT <- DT::renderDataTable({
+        input$update_risk | input$delete_risk
+        load_risks()
+    })
+```
+
+# Action list
+```{r}
+    output$actionsDT <- DT::renderDataTable({
+        # input$update_action | input$delete_action
+        load_actions_by_risk()
+    })
+```
+
+# Create new action
+
+```{r}
+    create_action <- function() {
+        new_action_nr <- load_actions() %>% pull(action_number) %>% last() + 1
+        query <- sprintf(
+            "INSERT INTO actions (action_number) VALUES (new_action_number)")
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+    }
+```
+
+# Delete action
+
+```{r}
+    delete_action <- function() {
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        delete_action_query <- 
+            sprintf("DELETE FROM actions WHERE action_number = %s",
+                                     input$selected_action_number)
+        dbGetQuery(riskdb_conn, delete_action_query)
+    }
+```
+
+
+# PLOTS
+# Heatmap plot with image background
+```{r}
+risks <- load_risks()
+
+heatmap_ggplot <- risks %>% 
+  ggplot(aes(x = risk_impact, y = risk_probability)) +
+  geom_point() +
+  geom_text(aes(label = risk_name, hjust = "left")) +
+  scale_x_continuous(breaks = c(0, 1, 2, 3, 4, 5),
+                     limits = c(0, 5)) +
+  scale_y_continuous(breaks = c(0, 1, 2, 3, 4, 5),
+                     limit = c(0, 5)) +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) +
+  labs(x = "Risk Impact",
+       y = "Risk Probability")
+
+heatmap_ggplot
+
+ggbackground(heatmap_ggplot, "heatmap_borders.png")
+  
+```
+
+# Heatmap raw grid made of tiles
+
+```{r}
+heatmap_tiles <- tribble(
+  ~impact, ~probability, ~tile_color,
+  1, 1, "yellow",
+  1, 2, "yellow",
+  1, 3, "yellow",
+  1, 4, "orange",
+  2, 1, "yellow",
+  2, 2, "orange",
+  2, 3, "orange",
+  2, 4, "orange",
+  3, 1, "orange",
+  3, 2, "orange",
+  3, 3, "red",
+  3, 4, "red",
+  4, 1, "orange",
+  4, 2, "red",
+  4, 3, "red",
+  4, 4, "red"
+)
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = heatmap_tiles, 
+            aes(x = impact, y = probability, 
+                          fill = tile_color,
+                          color = "black")) +
+  
+  scale_fill_identity() 
+  
+```
+
+# Heatmap plot (tiles + black text)
+```{r}
+risks <- load_risks()
+
+risks %>% 
+  ggplot(aes(x = risk_impact, y = risk_probability)) +
+  geom_tile(data = heatmap_tiles, 
+            aes(x = impact, y = probability, 
+                          fill = tile_color,
+                          color = "black")) +
+  scale_fill_identity() +
+  geom_point() +
+  geom_text_repel(aes(label = risk_name, 
+                hjust = "left",
+                nudge_x = 1)) +
+  scale_x_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limits = c(0.5, 4.5)) +
+  scale_y_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limit = c(0.5, 4.5)) +
+  theme_minimal() +
+  labs(x = "Risk Impact",
+       y = "Risk Probability")
+```
+
+# Risk text color function (yellow, orange, red)
+```{r}
+risk_color <- function(risk_impact, risk_probability) {
+  r_color <- case_when(
+    risk_impact == 1 & risk_probability == 1 ~ "yellow",
+    risk_impact == 1 & risk_probability == 2 ~ "yellow",
+    risk_impact == 1 & risk_probability == 3 ~ "orange",
+    risk_impact == 1 & risk_probability == 4 ~ "orange",
+    risk_impact == 2 & risk_probability == 1 ~ "yellow",
+    risk_impact == 2 & risk_probability == 2 ~ "orange",
+    risk_impact == 2 & risk_probability == 3 ~ "orange",
+    risk_impact == 2 & risk_probability == 4 ~ "red",
+    risk_impact == 3 & risk_probability == 1 ~ "yellow",
+    risk_impact == 3 & risk_probability == 2 ~ "orange",
+    risk_impact == 3 & risk_probability == 3 ~ "red",
+    risk_impact == 3 & risk_probability == 4 ~ "red",
+    risk_impact == 4 & risk_probability == 1 ~ "orange",
+    risk_impact == 4 & risk_probability == 2 ~ "orange",
+    risk_impact == 4 & risk_probability == 3 ~ "red",
+    risk_impact == 4 & risk_probability == 4 ~ "red",
+    TRUE ~ "")
+  r_color
+}
+
+risks_colored <- risks %>%
+  mutate(r_color = risk_color(risk_impact, risk_probability))
+```
+
+
+# Risk plot with (colored text)
+```{r}
+risks <- load_risks()
+
+risks_colored <- risks %>%
+  mutate(r_color = risk_color(risk_impact, risk_probability))
+
+risks_colored %>% 
+  ggplot(aes(x = risk_impact, y = risk_probability, color = r_color)) +
+  geom_point() +
+  geom_text_repel(aes(label = risk_name,
+                hjust = "left",
+                nudge_x = 1)) +
+  scale_color_identity() +
+  scale_x_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limits = c(-.5, 4.5)) +
+  scale_y_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limit = c(-0.5, 4.5)) +
+  theme_minimal() +
+  labs(x = "Risk Impact",
+       y = "Risk Probability")
+```
+
+# Risk text color function (black and white)
+```{r}
+risk_color_bw <- function(risk_impact, risk_probability) {
+  r_color <- case_when(
+    risk_impact == 1 & risk_probability == 1 ~ "black",
+    risk_impact == 1 & risk_probability == 2 ~ "black",
+    risk_impact == 1 & risk_probability == 3 ~ "red",
+    risk_impact == 1 & risk_probability == 4 ~ "red",
+    risk_impact == 2 & risk_probability == 1 ~ "black",
+    risk_impact == 2 & risk_probability == 2 ~ "red",
+    risk_impact == 2 & risk_probability == 3 ~ "red",
+    risk_impact == 2 & risk_probability == 4 ~ "red",
+    risk_impact == 3 & risk_probability == 1 ~ "black",
+    risk_impact == 3 & risk_probability == 2 ~ "red",
+    risk_impact == 3 & risk_probability == 3 ~ "white",
+    risk_impact == 3 & risk_probability == 4 ~ "white",
+    risk_impact == 4 & risk_probability == 1 ~ "red",
+    risk_impact == 4 & risk_probability == 2 ~ "white",
+    risk_impact == 4 & risk_probability == 3 ~ "white",
+    risk_impact == 4 & risk_probability == 4 ~ "white",
+    TRUE ~ "")
+  r_color
+}
+
+risks_colored_bw <- risks %>%
+  mutate(r_color = risk_color_bw(risk_impact, risk_probability))
+```
+
+
+# Risk plot (tiles + black and white risks)
+```{r}
+risks <- load_risks()
+
+risks_colored_bw <- risks %>%
+  mutate(r_color = risk_color_bw(risk_impact, risk_probability))
+
+risks_colored_bw %>% 
+  ggplot(aes(x = risk_impact, y = risk_probability, color = r_color)) +
+  geom_tile(data = heatmap_tiles, 
+            aes(x = impact, y = probability, 
+                          fill = tile_color,
+                          color = "black")) +
+  # geom_point() +
+  geom_text_repel(aes(label = risk_name,
+                hjust = "left",
+                nudge_x = 1)) +
+  scale_color_identity() +
+  scale_x_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limits = c(0.5, 4.5)) +
+  scale_y_continuous(breaks = c(0, 1, 2, 3, 4),
+                     limit = c(0.5, 4.5)) +
+  scale_fill_identity() +
+  theme_minimal() +
+  labs(x = "Risk Impact",
+       y = "Risk Probability")
+```
+
+# Shiny server deployment config
+```{r}
+rsconnect::setAccountInfo(name='red-datafactory', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
+
+```
+
+# SENTIMENT ANALYSIS
+
+## Word count
+
+```{r}
+risks <- load_risks()
+actions <- load_actions()
+```
+
+```{r}
+library(tidytext)
+library(stopwords)
+```
+
+```{r}
+risks_tidy <- risks$risk_description %>% 
+  # I had to add as.tibble as the loading provided only a chr vector
+  as.tibble() %>% 
+  mutate(line = row_number()) %>%
+  # and now amazing: converting everything into words!!!
+  unnest_tokens(input = value, output = word) %>%
+  filter(!word %in% get_stopwords(language = "en")$word,
+         !is.na(word)) %>%
+  select(word)
+```
+
+```{r}
+actions_tidy <- actions$action_description %>% 
+  # I had to add as.tibble as the loading provided only a chr vector
+  as.tibble() %>% 
+  mutate(line = row_number()) %>%
+  # and now amazing: converting everything into words!!!
+  unnest_tokens(input = value, output = word) %>%
+  filter(!word %in% get_stopwords(language = "en")$word,
+         !is.na(word)) %>%
+  select(word)
+```
+
+```{r}
+risks_actions_tidy <- bind_rows(
+  risks_tidy, actions_tidy
+)
+```
+
+```{r}
+risks_actions_tidy %>%
+  count(word, sort = TRUE) %>%
+  head(10) %>%
+  mutate(word = fct_inorder(word)) %>%
+  mutate(word = fct_rev(word)) %>%
+  ggplot(aes(y = n, x = word)) +
+  geom_col(fill = "darkred", alpha = 0.7) +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Top ten words on risk descriptions",
+       subtitle = "",
+       y = "Number of occurrences",
+       x = "")
+```
+
+## 
+
+
+
+
+
+
+
+
+
+

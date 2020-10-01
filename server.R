@@ -13,8 +13,8 @@ library(htmltools)
 # Server function ----
 server <- function(input, output) {
 # Database connection ----
-    # riskdb_path <- "database/risks.db"
-    riskdb_path <- "../app/database/venus_expert.db"
+    riskdb_path <- "risks.db"
+    # riskdb_path <- "venus_expert.db"
     riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 # Declare global variables ----
     risk_fields <- c("risk_number",
@@ -164,6 +164,9 @@ server <- function(input, output) {
             geom_col(fill = "darkred", alpha = 0.7) +
             coord_flip() +
             theme_minimal() +
+            theme(
+                axis.text.y = element_text(size = 12)
+            ) +
             labs(title = "Top ten words on risk descriptions",
                  subtitle = "",
                  y = "Number of occurrences",
@@ -189,9 +192,9 @@ server <- function(input, output) {
         dbDisconnect(riskdb_conn)
         risk_data
     }
-# Display the number of the first action for the selected risk ----
+# Display the number of the last action for the selected risk ----
     output$action_number <- renderUI({
-        input$new_action
+        input$new_action | input$delete_action
         selectInput(inputId = "selected_action_number",
                     label = "Action number",
                     width = 120,
@@ -349,7 +352,8 @@ server <- function(input, output) {
         dbGetQuery(riskdb_conn, query)
         dbDisconnect(riskdb_conn)
     }
-    # Delete the selected action ----
+
+# Delete the selected action ----
     observeEvent(input$delete_action, {
         delete_action()
     })
@@ -361,8 +365,6 @@ server <- function(input, output) {
         dbGetQuery(riskdb_conn, delete_action_query)
     }
 }
-
-# shinyApp(ui = htmlTemplate("index.html"), server)
 
 
 

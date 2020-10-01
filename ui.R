@@ -21,34 +21,35 @@ shinyUI(fluidPage(
         # Heatmap ----
         tabPanel("Criticality analysis",
             tags$br(),
-            sidebarLayout(
-                sidebarPanel(width = 2,
-                    textInput(
-                        inputId = "deparment",
-                        label = "Department")
-                ),
-                mainPanel(
-                    plotOutput("heatmap"),
-                    DTOutput("top5risks")
-                    )
-                )
+            # sidebarLayout(
+            #     sidebarPanel(width = 2,
+            #         textInput(
+            #             inputId = "deparment",
+            #             label = "Department")
+            #     ),
+            #     mainPanel(
+            #         )
+            #     )
+            plotOutput("heatmap"),
+            DTOutput("top5risks")
             ),
         # Text Analysis ----
         tabPanel("Text Analysis",
             tags$br(),
-            sidebarLayout(
-                sidebarPanel(width = 2,
-                    textInput(
-                        inputId = "deparment",
-                        label = "Department")                           
+            # sidebarLayout(
+            #     sidebarPanel(width = 2,
+            #         textInput(
+            #             inputId = "deparment",
+            #             label = "Department")                           
+            #     ),
+            #     mainPanel(
+            #       )
+            # )
+            column(6,
+                plotOutput("top10words")
                 ),
-                mainPanel(
-                    column(6,
-                    plotOutput("top10words")
-                    ),
-                    column(6)
-                )
-            )
+            column(6)
+            
         ),
         # Risk Management ----
         tabPanel("Risk Management",

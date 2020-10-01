@@ -13,17 +13,28 @@ library(RSQLite)
 
 ```{r setup}
 # Define connection to database (or create it if it doesn't exist)
-riskdb_path = "risk.db"
-heatxl_path = "heatmap.xlsx"
-heat_conn = dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
-knitr::opts_chunk$set(connection = "heat_con")
+
+# test with Tesla like data
+riskdb_path <- "risks.db"
+heatxl_path <- "support_files/heatmap.xlsx"
+heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+# test with real data (not public)
+# riskdb_path <- "../app/database/venus_expert.db"
+# heatxl_path <- "../support_files/venus_expert_risks.xlsx"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+
+knitr::opts_chunk$set(connection = "heat_conn")
 ```
+
+
 
 # Create tables
 
 ## Risks
 
-```{sql connection=heat_con}
+```{sql}
 CREATE TABLE risks (
   risk_number integer primary key,
   risk_name text,
@@ -35,7 +46,7 @@ CREATE TABLE risks (
 
 ## Actions
 
-```{sql connection=heat_con}
+```{sql}
 CREATE TABLE actions (
   action_number integer primary key,
   risk_number integer REFERENCES risks (risk_number),
@@ -66,24 +77,34 @@ ORDER BY table_name, col_id
 
 ## Risks
 ```{r}
-dbWriteTable(conn = heat_con,
+dbWriteTable(conn = heat_conn,
              append = TRUE,
              name = "risks",
              value = read_xlsx(path = heatxl_path,
-                               sheet = "risks")
+                               sheet = "risks", na = "")
              )
 ```
 
 ## Actions
 
 ```{r}
-dbWriteTable(conn = heat_con,
+dbWriteTable(conn = heat_conn,
              append = TRUE,
              name = "actions",
              value = read_xlsx(path = heatxl_path,
-                               sheet = "actions")
+                               sheet = "actions", na = "")
              )
 ```
+
+# Insert data manually
+
+```{sql}
+INSERT INTO actions (action_number, risk_number) VALUES (1115, 2)
+
+
+```
+
+
 
 # Display data
 
@@ -103,13 +124,19 @@ FROM "actions"
 ## Risks
 ```{sql}
 DELETE FROM risks
--- WHERE risk_number = 8
+-- WHERE risk_number = 17
 ```
 
 ## Actions
 ```{sql}
 DELETE FROM actions
 ```
+
+```{sql}
+DELETE FROM actions
+WHERE action_number = 1002
+```
+
 
 # Remove table
 
