@@ -73,9 +73,23 @@ load_risks <- function() {
 
 testing the function
 ```{r}
-load_risks()
+risks <- load_risks()
+risks
 load_risks() %>% pull(risk_number)
 ```
+# top 5 risks table
+```{r}
+risks <- load_risks() %>% 
+            mutate(criticality = risk_probability * risk_impact) %>%
+            # filter(!is.na(criticality)) %>%
+            arrange(desc(criticality))
+            # slice_max(criticality, 5)
+
+risks
+```
+
+
+
 # load actions
 ```{r}
     load_actions <- function() {
@@ -280,8 +294,20 @@ update_risk(5)
     })
 ```
 
+# Create new action
 
-# PLOTS ----
+```{r}
+    create_action <- function() {
+        new_action_nr <- load_actions() %>% pull(action_number) %>% last() + 1
+        query <- sprintf(
+            "INSERT INTO actions (action_number) VALUES (new_action_number)")
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
+    }
+```
+
+
+# PLOTS
 # Heatmap plot with image background
 ```{r}
 risks <- load_risks()
@@ -484,6 +510,7 @@ rsconnect::setAccountInfo(name='red-datafactory', token='52DA421CC5E0FCD672FAFAE
 
 ```{r}
 risks <- load_risks()
+actions <- load_actions()
 ```
 
 ```{r}
@@ -498,11 +525,31 @@ risks_tidy <- risks$risk_description %>%
   mutate(line = row_number()) %>%
   # and now amazing: converting everything into words!!!
   unnest_tokens(input = value, output = word) %>%
-  filter(!word %in% get_stopwords(language = "en")$word) 
+  filter(!word %in% get_stopwords(language = "en")$word,
+         !is.na(word)) %>%
+  select(word)
 ```
 
 ```{r}
-risks_tidy %>%
+actions_tidy <- actions$action_description %>% 
+  # I had to add as.tibble as the loading provided only a chr vector
+  as.tibble() %>% 
+  mutate(line = row_number()) %>%
+  # and now amazing: converting everything into words!!!
+  unnest_tokens(input = value, output = word) %>%
+  filter(!word %in% get_stopwords(language = "en")$word,
+         !is.na(word)) %>%
+  select(word)
+```
+
+```{r}
+risks_actions_tidy <- bind_rows(
+  risks_tidy, actions_tidy
+)
+```
+
+```{r}
+risks_actions_tidy %>%
   count(word, sort = TRUE) %>%
   head(10) %>%
   mutate(word = fct_inorder(word)) %>%

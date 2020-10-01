@@ -13,8 +13,8 @@ library(htmltools)
 # Server function ----
 server <- function(input, output) {
 # Database connection ----
-    riskdb_path <- "database/risks.db"
-    # riskdb_path <- "../app/database/venus_expert.db"
+    # riskdb_path <- "database/risks.db"
+    riskdb_path <- "../app/database/venus_expert.db"
     riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 # Declare global variables ----
     risk_fields <- c("risk_number",
@@ -98,7 +98,8 @@ server <- function(input, output) {
                           fill = tile_color,
                           color = "black")) +
             # geom_point() +
-            geom_text_repel(aes(label = glue("{risk_number} - {risk_name}"),
+            geom_text_repel(aes(label = risk_number,
+                                    # glue("{risk_number} - {risk_name}"),
                                 color = r_color,
                                 size = 12
                                 ),
@@ -116,32 +117,57 @@ server <- function(input, output) {
                   plot.title = element_text(hjust = 0.5))
         
     })
+# Top 5 risks table ----
+    output$top5risks <- renderDT(
+        rownames = FALSE,
+        escape = TRUE,
+        options = list(pageLength = 5),
+        # input$save_risk | input$delete_risk
+        load_risks() %>%
+            mutate(criticality = risk_probability * risk_impact) %>%
+            arrange(desc(criticality)) %>%
+            select(risk_number, risk_name, risk_probability, risk_impact)
+            
+    )
 # Text Analysis -------------------------------
     output$top10words <- renderPlot({
         input$save_risk | input$delete_risk
         risks <- load_risks()
+        actions <- load_actions()
         risks_tidy <- risks$risk_description %>% 
             # I had to add as.tibble as the loading provided only a chr vector
             as.tibble() %>% 
             mutate(line = row_number()) %>%
             # and now amazing: converting everything into words!!!
             unnest_tokens(input = value, output = word) %>%
-            filter(!word %in% get_stopwords(language = "en")$word) 
-        risks_tidy %>%
+            filter(!word %in% get_stopwords(language = "en")$word,
+                   !is.na(word)) %>%
+            select(word)
+        actions_tidy <- actions$action_description %>% 
+            # I had to add as.tibble as the loading provided only a chr vector
+            as.tibble() %>% 
+            mutate(line = row_number()) %>%
+            # and now amazing: converting everything into words!!!
+            unnest_tokens(input = value, output = word) %>%
+            filter(!word %in% get_stopwords(language = "en")$word,
+                   !is.na(word)) %>%
+            select(word)
+        risks_actions_tidy <- bind_rows(
+            risks_tidy, actions_tidy
+        )
+        risks_actions_tidy %>%
             count(word, sort = TRUE) %>%
             head(10) %>%
-            filter(!is.na(word)) %>%
             mutate(word = fct_inorder(word)) %>%
             mutate(word = fct_rev(word)) %>%
             ggplot(aes(y = n, x = word)) +
             geom_col(fill = "darkred", alpha = 0.7) +
             coord_flip() +
             theme_minimal() +
-            labs(title = "Top ten words",
+            labs(title = "Top ten words on risk descriptions",
                  subtitle = "",
-                 y = "Number of appearances",
-                 x = "",
-                 plot.title = element_text(hjust = 0.5))
+                 y = "Number of occurrences",
+                 x = "")
     })
 # Display the name of the selected risk ----
     output$risk_name <- renderUI({
@@ -276,6 +302,18 @@ server <- function(input, output) {
         delete_risk_query <- sprintf("DELETE FROM risks WHERE risk_number = %s",
                                  input$risk_number)
         dbGetQuery(riskdb_conn, delete_risk_query)
+    }
+# Create a new action ---- 
+    observeEvent(input$new_action, {
+        create_action()
+    })
+    create_action <- function() {
+        new_action_nr <- load_actions() %>% pull(action_number) %>% last() + 1
+        riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+        query <- glue(
+            "INSERT INTO actions (action_number, risk_number) VALUES ({new_action_nr}, {input$risk_number})")
+        dbGetQuery(riskdb_conn, query)
+        dbDisconnect(riskdb_conn)
     }
 # Save the selected action ----
     observeEvent(input$save_action, {

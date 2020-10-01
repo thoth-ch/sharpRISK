@@ -96,6 +96,16 @@ dbWriteTable(conn = heat_conn,
              )
 ```
 
+# Insert data manually
+
+```{sql}
+INSERT INTO actions (action_number, risk_number) VALUES (1115, 2)
+
+
+```
+
+
+
 # Display data
 
 ## Risks

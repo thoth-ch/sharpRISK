@@ -9,6 +9,7 @@ library(ggrepel)
 library(tidytext)
 library(stopwords)
 library(htmltools)
+library(DT)
 
 shinyUI(fluidPage(
     
@@ -27,7 +28,9 @@ shinyUI(fluidPage(
                         label = "Department")
                 ),
                 mainPanel(
-                    plotOutput("heatmap"))
+                    plotOutput("heatmap"),
+                    DTOutput("top5risks")
+                    )
                 )
             ),
         # Text Analysis ----
@@ -78,6 +81,8 @@ shinyUI(fluidPage(
             sidebarLayout(
             sidebarPanel(width = 2, 
                 uiOutput("action_number"),
+                actionButton(width = 120, "new_action", "New Action"),
+                br(), br(),
                 actionButton(width = 120, "save_action", "Save Action"),
                 br(), br(),
                 actionButton(width = 120, "delete_action", "Delete Action"),
