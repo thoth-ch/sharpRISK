@@ -11,7 +11,7 @@ library(stopwords)
 library(htmltools)
 library(DT)
 
-shinyUI(fluidPage(
+ui <- fluidPage(
     
     includeCSS("risk_app.css"),
     
@@ -20,18 +20,14 @@ shinyUI(fluidPage(
         type = "tabs",
         # Heatmap ----
         tabPanel("Criticality analysis",
+            column(2),
+            column(8,
             tags$br(),
-            # sidebarLayout(
-            #     sidebarPanel(width = 2,
-            #         textInput(
-            #             inputId = "deparment",
-            #             label = "Department")
-            #     ),
-            #     mainPanel(
-            #         )
-            #     )
-            plotOutput("heatmap"),
-            DTOutput("top5risks")
+
+                    tableOutput("table"),
+                    plotOutput("heatmap"),
+                    DTOutput("top5risks")),
+            column(2)
             ),
         # Text Analysis ----
         tabPanel("Text Analysis",
@@ -60,45 +56,52 @@ shinyUI(fluidPage(
                     inputId = "risk_number",
                     value = 1,
                     label = "Risk number",
-                    width = 120
+                    width = 160
                 ),
                        hr(),
-                       actionButton(width = 120, "save_risk", "Save Risk"),
+                       actionButton(width = 160, "save_risk", "Save Risk"),
                        br(), br(),
-                       actionButton(width = 120, "delete_risk", "Delete Risk")
+                       actionButton(width = 160, "delete_risk", "Delete Risk"),
+                br(), br(),
+                downloadButton(width = 160, "downloadRisks", "Download Risks")
                        ),
             mainPanel(
-                    column(10,
+                    column(8,
                         uiOutput("risk_name"),
                         uiOutput("risk_description"),
                         br(),
                     ),
-                    column(2,
+                    column(4,
                         br(),
-                        uiOutput("risk_impact"),
                         uiOutput("risk_probability"),
+                        uiOutput("risk_impact")
                     ))
             ),
             sidebarLayout(
             sidebarPanel(width = 2, 
                 uiOutput("action_number"),
-                actionButton(width = 120, "new_action", "New Action"),
+                actionButton(width = 160, "new_action", "New Action"),
                 br(), br(),
-                actionButton(width = 120, "save_action", "Save Action"),
+                actionButton(width = 160, "save_action", "Save Action"),
                 br(), br(),
-                actionButton(width = 120, "delete_action", "Delete Action"),
-                # actionButton("delete_action")
+                actionButton(width = 160, "delete_action", "Delete Action"),
+                br(), br(),
+                downloadButton(width = 160, "downloadActions", "Download Actions")
                     ),
             mainPanel(
-                column(12,
-                    uiOutput("action_description")
+                column(4,
+                       uiOutput("action_description"),
+                column(8,
+                       uiOutput("action_responsible"),
+                       uiOutput("action_deadline")
+                       )
                 )
                 )
             )
 
         )
     )
-))
+)
 
 
 

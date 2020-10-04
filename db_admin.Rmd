@@ -14,16 +14,22 @@ library(RSQLite)
 ```{r setup}
 # Define connection to database (or create it if it doesn't exist)
 
-# test with Tesla like data
-riskdb_path <- "risks.db"
-heatxl_path <- "support_files/heatmap.xlsx"
-heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
-
-# test with real data (not public)
-# riskdb_path <- "../app/database/venus_expert.db"
-# heatxl_path <- "../support_files/venus_expert_risks.xlsx"
+# tests with Tesla like data
+# riskdb_path <- "risks.db"
+# heatxl_path <- "support_files/heatmap.xlsx"
 # heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
+# tests with real data (not public)
+# Venus 1
+# riskdb_path <- "venus_expert.db"
+# heatxl_path <- "support_files/venus_expert_risks.xlsx"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+# Venus 2
+risks_path <- "bkps/2020-10-04-risksbkp.xlsx"
+actions_path <- "bkps/2020-10-04-actionsbkp.xlsx"
+riskdb_path <- "venus_expert2.db"
+heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 knitr::opts_chunk$set(connection = "heat_conn")
 ```
@@ -80,7 +86,7 @@ ORDER BY table_name, col_id
 dbWriteTable(conn = heat_conn,
              append = TRUE,
              name = "risks",
-             value = read_xlsx(path = heatxl_path,
+             value = read_xlsx(path = risks_path,
                                sheet = "risks", na = "")
              )
 ```
@@ -91,7 +97,7 @@ dbWriteTable(conn = heat_conn,
 dbWriteTable(conn = heat_conn,
              append = TRUE,
              name = "actions",
-             value = read_xlsx(path = heatxl_path,
+             value = read_xlsx(path = actions_path,
                                sheet = "actions", na = "")
              )
 ```
@@ -134,7 +140,7 @@ DELETE FROM actions
 
 ```{sql}
 DELETE FROM actions
-WHERE action_number = 1002
+WHERE action_number = 1081
 ```
 
 

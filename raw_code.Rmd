@@ -319,6 +319,17 @@ update_risk(5)
     }
 ```
 
+# Download
+
+```{r}
+download <- function() {
+  risks <- load_risks()
+  actions <- load_actions()
+  write_csv()
+}
+```
+
+
 
 # PLOTS
 # Heatmap plot with image background
