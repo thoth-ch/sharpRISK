@@ -49,12 +49,13 @@ server <- function(input, output) {
     load_actions <- function() {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
         query <- "SELECT * FROM actions"
-        actions <- dbGetQuery(riskdb_conn, query) %>%
-            mutate(action_deadline = ymd(as.integer(action_deadline)))
+        actions <- dbGetQuery(riskdb_conn, query) # %>%
+            # mutate(action_deadline = ymd(as.integer(action_deadline)))
         dbDisconnect(riskdb_conn)
         actions
     }
-
+    risks <- load_risks()
+    actions <- load_actions()
 # HEATMAP ----
     heatmap_tiles <- tribble(
         ~impact, ~probability, ~tile_color,
@@ -100,7 +101,8 @@ server <- function(input, output) {
 # rendering the plot (updated if either save_risk or delete is clicked)
     output$heatmap <- renderPlot({
         input$save_risk | input$delete_risk
-        load_risks() %>%
+        load_risks() %>% 
+            filter(risk_probability | risk_impact %in% c(1, 2, 3, 4)) %>%
             mutate(r_color = risk_color_bw(
                 risk_impact, risk_probability)) %>%
             ggplot(aes(x = risk_impact, y = risk_probability)) +
@@ -377,6 +379,7 @@ server <- function(input, output) {
 # Save the selected action
     observeEvent(input$save_action, {
         save_action(aggregate_action_data())
+        # actions <- load_actions()
     })
     aggregate_action_data <- reactive({
         aggregated_actions <- sapply(selected_action_fields, 
@@ -416,6 +419,8 @@ server <- function(input, output) {
     }
 
 # Downloads ----
+    
+    
     output$downloadRisks <- downloadHandler(
 
         # contentType = "text/csv",
@@ -423,7 +428,6 @@ server <- function(input, output) {
             paste(Sys.Date(), "-risksbkp", ".xlsx", sep = "")
         },
         content = function(file) {
-            risks <- load_risks()
             openxlsx::write.xlsx(risks, file, sheetname = "Risks")
         }
     )
@@ -433,7 +437,6 @@ server <- function(input, output) {
             paste(Sys.Date(), "-actionsbkp", ".xlsx", sep = "")
         },
         content = function(file) {
-            actions <- load_actions()
             openxlsx::write.xlsx(actions, file, sheetname = "Actions")
         }
     )
