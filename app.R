@@ -1,4 +1,8 @@
-# Load packages
+# **** APP SETUP **** ----
+# App address ----
+# https://rre.svr.nestle.com:3838/RDRamalhJo/RiskApp
+
+# Load packages ----
 library(tidyverse)
 library(lubridate)
 library(glue)
@@ -12,17 +16,16 @@ library(htmltools)
 library(DT)
 library(shiny)
 
-# Define UI for application that draws a histogram
+# **** USER INTERFACE **** ----
 ui <- fluidPage(
-  
   
   includeCSS("risk_app.css"),
   
-  titlePanel("sharpRisk"),
+  titlePanel("Risk Management App"),
   tabsetPanel(
     type = "tabs",
-    # Heatmap ----
-    tabPanel("Criticality analysis",
+    # Heatmap tab----
+    tabPanel("Heatmap",
              column(2),
              column(8,
                     tags$br(),
@@ -32,36 +35,30 @@ ui <- fluidPage(
                     DTOutput("top5risks")),
              column(2)
     ),
-    # Text Analysis ----
+    # Text Analysis tab ----
     tabPanel("Text Analysis",
              tags$br(),
-             # sidebarLayout(
-             #     sidebarPanel(width = 2,
-             #         textInput(
-             #             inputId = "deparment",
-             #             label = "Department")                           
-             #     ),
-             #     mainPanel(
-             #       )
-             # )
              column(6,
                     plotOutput("top10words")
              ),
              column(6)
              
     ),
-    # Risk Management ----
+    # Risk Management tab ----
     tabPanel("Risk Management",
              tags$br(),
              sidebarLayout(
                sidebarPanel(width = 2,
-                            numericInput(
-                              inputId = "risk_number",
-                              value = 1,
-                              label = "Risk number",
-                              width = 160
-                            ),
-                            hr(),
+                            # numericInput(
+                            #   inputId = "risk_number",
+                            #   value = 1,
+                            #   label = "Risk number",
+                            #   width = 160
+                            # ),
+                            uiOutput("risk_number"),
+                            # hr(),
+                            actionButton(width = 160, "new_risk", "New Risk"),
+                            br(), br(),
                             actionButton(width = 160, "save_risk", "Save Risk"),
                             br(), br(),
                             actionButton(width = 160, "delete_risk", "Delete Risk"),
@@ -72,7 +69,7 @@ ui <- fluidPage(
                  column(8,
                         uiOutput("risk_name"),
                         uiOutput("risk_description"),
-                        br(),
+                        br()
                  ),
                  column(4,
                         br(),
@@ -92,13 +89,14 @@ ui <- fluidPage(
                             downloadButton(width = 160, "downloadActions", "Download Actions")
                ),
                mainPanel(
-                 column(4,
-                        uiOutput("action_description"),
-                        column(8,
-                               uiOutput("action_responsible"),
-                               uiOutput("action_deadline")
-                        )
+                 column(8,
+                        uiOutput("action_description")
+                 ),
+                 column(2,
+                        uiOutput("action_responsible"),
+                        uiOutput("action_deadline")
                  )
+                 
                )
              )
              
@@ -106,13 +104,13 @@ ui <- fluidPage(
   )
 )
 
-# Define server logic required to draw a histogram
+# **** BACKEND APPLICATION **** ----
 server <- function(input, output) {
   
   # Database connection ----
-  # riskdb_path <- "risks.db"
+  riskdb_path <- "risks.db"
   # riskdb_path <- "venus_expert.db"
-  riskdb_path <- "venus_expert2.db"
+  # riskdb_path <- "venus_expert2.db"
   # Declare global variables ----
   risk_fields <- c("risk_number",
                    "risk_name",
@@ -153,7 +151,7 @@ server <- function(input, output) {
   }
   risks <- load_risks()
   actions <- load_actions()
-  # HEATMAP ----
+  # Heatmap ----
   heatmap_tiles <- tribble(
     ~impact, ~probability, ~tile_color,
     1, 1, "yellow",
@@ -219,12 +217,15 @@ server <- function(input, output) {
       scale_fill_identity() +
       scale_color_identity() +
       theme_minimal() +
-      labs(title = "Heatmap",
-           x = "Risk Impact",
-           y = "Risk Probability") +
+      labs(
+        # title = "Heatmap",
+        x = "Risk Impact",
+        y = "Risk Probability") +
       theme(legend.position = "none",
             panel.grid = element_blank(),
-            plot.title = element_text(hjust = 0.5))
+            plot.title = element_text(hjust = 0.5),
+            axis.text.x = element_text(size = 12, face = "bold"),
+            axis.text.y = element_text(size = 12, face = "bold"))
     
   })
   # Top 5 risks table ----
@@ -247,19 +248,19 @@ server <- function(input, output) {
     risks <- load_risks()
     actions <- load_actions()
     risks_tidy <- risks$risk_description %>% 
-      # I had to add as.tibble as the loading provided only a chr vector
+      # as.tibble required as the loading provided only a chr vector
       as.tibble() %>% 
       mutate(line = row_number()) %>%
-      # and now amazing: converting everything into words!!!
+      # converting everything into words
       unnest_tokens(input = value, output = word) %>%
       filter(!word %in% get_stopwords(language = "en")$word,
              !is.na(word)) %>%
       select(word)
     actions_tidy <- actions$action_description %>% 
-      # I had to add as.tibble as the loading provided only a chr vector
+      # as.tibble required as the loading provided only a chr vector
       as.tibble() %>% 
       mutate(line = row_number()) %>%
-      # and now amazing: converting everything into words!!!
+      # converting everything into words
       unnest_tokens(input = value, output = word) %>%
       filter(!word %in% get_stopwords(language = "en")$word,
              !is.na(word)) %>%
@@ -282,23 +283,12 @@ server <- function(input, output) {
       theme(
         axis.text.y = element_text(size = 12)
       ) +
-      labs(title = "Top ten words on risk descriptions",
+      labs(title = "Top ten words",
            subtitle = "",
            y = "Number of occurrences",
            x = "")
   })
   # RISK MANAGEMENT ----
-  # Risk name ----
-  # Display the name of the selected risk
-  output$risk_name <- renderUI({
-    textInput(inputId = "selected_risk_name",
-              label = "Risk Name",
-              width = 600,
-              value = get_risk_name())
-  })
-  get_risk_name <- reactive({
-    get_risk_data(input$risk_number, risk_fields) %>% pull(risk_name)
-  })
   # Get risk data ----
   get_risk_data <- function(number, risk_fields) {
     riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -311,15 +301,16 @@ server <- function(input, output) {
     risk_data
   }
   # Risk number ----
-  # Display the number of the last action for the selected risk
-  output$action_number <- renderUI({
-    input$new_action | input$delete_action
-    selectInput(inputId = "selected_action_number",
-                label = "Action number",
+  # Display the number of the last risk for the selected risk
+  output$risk_number <- renderUI({
+    input$new_risk| input$delete_risk
+    selectInput(inputId = "risk_number",
+                label = "Risk number",
+                
                 width = 160,
-                choices = load_actions_by_risk() %>% pull(action_number),
-                selected = load_actions_by_risk() %>% 
-                  pull(action_number) %>% last())
+                choices = load_risks() %>% pull(risk_number),
+                selected = load_risks() %>% 
+                  pull(risk_number) %>% first())
   })
   load_actions_by_risk <- function() {
     riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -330,12 +321,23 @@ server <- function(input, output) {
     dbDisconnect(riskdb_conn)
     actions
   }
+  # Risk name ----
+  # Display the name of the selected risk
+  output$risk_name <- renderUI({
+    textInput(inputId = "selected_risk_name",
+              label = "Risk Name",
+              width = 600,
+              value = get_risk_name())
+  })
+  get_risk_name <- reactive({
+    get_risk_data(input$risk_number, risk_fields) %>% pull(risk_name)
+  })
   # Risk description ----
   # Display the description of the selected risk
   output$risk_description <- renderUI({
     textAreaInput(
       width = 600,
-      height = 200,
+      height = 150,
       inputId = "selected_risk_description",
       label = "Risk Description",
       value = get_risk_description())
@@ -364,60 +366,20 @@ server <- function(input, output) {
   })    
   get_risk_probability <- reactive({
     get_risk_data(input$risk_number, risk_fields) %>% pull(risk_probability)
-  })   
-  # Risk description ----
-  # Display the description of the selected action
-  output$action_description <- renderUI({
-    textAreaInput(
-      width = 600,
-      height = 200,
-      inputId = "selected_action_description",
-      label = "Action Description",
-      value = get_action_description())
   })
-  get_action_description <- reactive({
-    get_action_data(input$selected_action_number, action_fields) %>% 
-      pull(action_description)
+  # Create risk ----
+  # Create a new risk
+  observeEvent(input$new_risk, {
+    create_risk()
   })
-  # Risk responsible ----
-  # Display the responsible of the selected action
-  output$action_responsible <- renderUI({
-    textInput(
-      width = 160,
-      inputId = "selected_action_responsible",
-      label = "Action responsible",
-      value = get_action_responsible())
-  })
-  get_action_responsible <- reactive({
-    get_action_data(input$selected_action_number, action_fields) %>%
-      pull(action_responsible)
-    
-  })
-  # Action deadline ----
-  # Display the deadline for the selected action
-  output$action_deadline <- renderUI({
-    textInput(
-      # min = "2020-10-01",
-      width = 160,
-      inputId = "selected_action_deadline",
-      label = "Action deadline",
-      value = get_action_deadline())
-  })
-  get_action_deadline <- reactive({
-    get_action_data(input$selected_action_number, action_fields) %>%
-      pull(action_deadline)
-    
-  })
-  # Get actions data ----
-  get_action_data <- function(number, action_fields) {
+  create_risk <- function() {
+    new_risk_nr <- load_risks() %>% pull(risk_number) %>% last() %>% as.numeric() %>% + 1
     riskdb_conn <- dbConnect(SQLite(), riskdb_path)
-    action_fields_str <- paste(action_fields, collapse = ", ")
     query <- glue(
-      "SELECT {action_fields_str} FROM actions WHERE action_number = {number}"
-    )
-    action_data <- dbGetQuery(riskdb_conn, query)
+      "INSERT INTO risks (risk_number) 
+      VALUES ({new_risk_nr})")
+    dbGetQuery(riskdb_conn, query)
     dbDisconnect(riskdb_conn)
-    action_data
   }
   # Save risk ----
   # Save the selected risk
@@ -458,6 +420,81 @@ server <- function(input, output) {
                                  input$risk_number)
     dbGetQuery(riskdb_conn, delete_risk_query)
   }
+  # Get action data ----
+  get_action_data <- function(number, action_fields) {
+    riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+    action_fields_str <- paste(action_fields, collapse = ", ")
+    query <- glue(
+      "SELECT {action_fields_str} FROM actions WHERE action_number = {number}"
+    )
+    action_data <- dbGetQuery(riskdb_conn, query)
+    dbDisconnect(riskdb_conn)
+    action_data
+  }
+  # Action number ----
+  # Display the number of the last action for the selected risk
+  output$action_number <- renderUI({
+    input$new_action | input$delete_action
+    selectInput(inputId = "selected_action_number",
+                label = "Action number",
+                width = 160,
+                choices = load_actions_by_risk() %>% pull(action_number),
+                selected = load_actions_by_risk() %>% 
+                  pull(action_number) %>% last())
+  })
+  load_actions_by_risk <- function() {
+    riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+    query <- glue(
+      "SELECT * FROM actions WHERE risk_number = {input$risk_number}")
+    actions <- dbGetQuery(riskdb_conn, query) %>%
+      mutate(action_deadline = ymd(as.integer(action_deadline)))
+    dbDisconnect(riskdb_conn)
+    actions
+  }
+  # Action description ----
+  # Display the description of the selected action
+  output$action_description <- renderUI({
+    textAreaInput(
+      width = 600,
+      height = 150,
+      inputId = "selected_action_description",
+      label = "Action Description",
+      value = get_action_description())
+  })
+  get_action_description <- reactive({
+    get_action_data(input$selected_action_number, action_fields) %>% 
+      pull(action_description)
+  })
+  # Action responsible ----
+  # Display the responsible of the selected action
+  output$action_responsible <- renderUI({
+    textInput(
+      width = 160,
+      inputId = "selected_action_responsible",
+      label = "Action responsible",
+      value = get_action_responsible())
+  })
+  get_action_responsible <- reactive({
+    get_action_data(input$selected_action_number, action_fields) %>%
+      pull(action_responsible)
+    
+  })
+  # Action deadline ----
+  # Display the deadline for the selected action
+  output$action_deadline <- renderUI({
+    textInput(
+      # min = "2020-10-01",
+      width = 160,
+      inputId = "selected_action_deadline",
+      label = "Action deadline",
+      value = get_action_deadline())
+  })
+  get_action_deadline <- reactive({
+    get_action_data(input$selected_action_number, action_fields) %>%
+      pull(action_deadline)
+    
+  })
+  
   # Create action ----
   # Create a new action
   observeEvent(input$new_action, {
@@ -502,7 +539,7 @@ server <- function(input, output) {
     dbDisconnect(riskdb_conn)
   }
   
-  # Deleted action ----
+  # Delete action ----
   # Delete the selected action
   observeEvent(input$delete_action, {
     delete_action()
