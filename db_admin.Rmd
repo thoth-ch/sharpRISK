@@ -15,9 +15,9 @@ library(RSQLite)
 # Define connection to database (or create it if it doesn't exist)
 
 # tests with Tesla like data
-# riskdb_path <- "risks.db"
-# heatxl_path <- "support_files/heatmap.xlsx"
-# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+riskdb_path <- "D:/sharpRISK/risks.db"
+risks_path <- "support_files/heatmap.xlsx"
+heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 # tests with real data (not public)
 # Venus 1
@@ -26,10 +26,10 @@ library(RSQLite)
 # heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 # Venus 2
-risks_path <- "bkps/2020-10-04-risksbkp.xlsx"
-actions_path <- "bkps/2020-10-04-actionsbkp.xlsx"
-riskdb_path <- "venus_expert2.db"
-heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+# risks_path <- "bkps/2020-10-04-risksbkp.xlsx"
+# actions_path <- "bkps/2020-10-04-actionsbkp.xlsx"
+# riskdb_path <- "venus_expert2.db"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 knitr::opts_chunk$set(connection = "heat_conn")
 ```
@@ -97,7 +97,7 @@ dbWriteTable(conn = heat_conn,
 dbWriteTable(conn = heat_conn,
              append = TRUE,
              name = "actions",
-             value = read_xlsx(path = actions_path,
+             value = read_xlsx(path = risks_path,
                                sheet = "actions", na = "")
              )
 ```
@@ -154,6 +154,12 @@ DROP TABLE risks;
 ## Actions
 ```{sql}
 DROP TABLE actions;
+```
+
+# Disconnect database
+
+```{sql}
+dbDisconnect("heat_conn")
 ```
 
 

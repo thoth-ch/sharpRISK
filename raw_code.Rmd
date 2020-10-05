@@ -29,6 +29,15 @@ riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 knitr::opts_chunk$set(connection = "riskdb_conn")
 ```
 
+```{r}
+  # riskdb_path <- "risks.db"
+  # riskdb_path <- "venus_expert.db"
+  # riskdb_path <- "venus_expert2.db"
+dbDisconnect(riskdb_conn)
+```
+
+
+
 # Global variables
 ```{r}
 risk_fields <- c("risk_number",
