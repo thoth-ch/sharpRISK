@@ -15,23 +15,26 @@ library(RSQLite)
 # Define connection to database (or create it if it doesn't exist)
 
 # tests with Tesla like data
-riskdb_path <- "D:/sharpRISK/risks.db"
-risks_path <- "support_files/heatmap.xlsx"
-heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+riskdb_path <- "risks.db"
+heatxl_path <- "support_files/heatmap.xlsx"
+# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+
+# tests with private risks
+riskdb_path <- "JR_risks.db"
 
 # tests with real data (not public)
 # Venus 1
-# riskdb_path <- "venus_expert.db"
+# riskdb_path <- "venus_expert2.db"
 # heatxl_path <- "support_files/venus_expert_risks.xlsx"
 # heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 # Venus 2
-# risks_path <- "bkps/2020-10-04-risksbkp.xlsx"
-# actions_path <- "bkps/2020-10-04-actionsbkp.xlsx"
-# riskdb_path <- "venus_expert2.db"
-# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
+# risks_path <- "bkps/2020-10-08-risksbkp.xlsx"
+# actions_path <- "bkps/2020-10-08-actionsbkp.xlsx"
+# riskdb_path <- "venus_expert.db"
+db_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
-knitr::opts_chunk$set(connection = "heat_conn")
+knitr::opts_chunk$set(connection = "db_conn")
 ```
 
 
@@ -58,7 +61,8 @@ CREATE TABLE actions (
   risk_number integer REFERENCES risks (risk_number),
   action_description text,
   action_responsible text,
-  action_deadline text
+  action_deadline text,
+  action_status text
 );
 ```
 
@@ -83,22 +87,24 @@ ORDER BY table_name, col_id
 
 ## Risks
 ```{r}
-dbWriteTable(conn = heat_conn,
+dbWriteTable(conn = db_conn,
              append = TRUE,
              name = "risks",
              value = read_xlsx(path = risks_path,
-                               sheet = "risks", na = "")
+                               # sheet = "risks", 
+                               na = "")
              )
 ```
 
 ## Actions
 
 ```{r}
-dbWriteTable(conn = heat_conn,
+dbWriteTable(conn = db_conn,
              append = TRUE,
              name = "actions",
-             value = read_xlsx(path = risks_path,
-                               sheet = "actions", na = "")
+             value = read_xlsx(path = heatxl_path,
+                               sheet = "actions", 
+                               na = "")
              )
 ```
 
@@ -130,7 +136,7 @@ FROM "actions"
 ## Risks
 ```{sql}
 DELETE FROM risks
--- WHERE risk_number = 17
+--WHERE risk_number = 1117
 ```
 
 ## Actions
@@ -140,7 +146,7 @@ DELETE FROM actions
 
 ```{sql}
 DELETE FROM actions
-WHERE action_number = 1081
+WHERE action_number = NA
 ```
 
 
@@ -156,14 +162,20 @@ DROP TABLE risks;
 DROP TABLE actions;
 ```
 
-# Disconnect database
+# Actions by user
 
 ```{sql}
-dbDisconnect("heat_conn")
+SELECT actions.risk_number, risks.risk_description, actions.action_number, actions.action_responsible, actions.action_description
+FROM actions
+INNER JOIN risks
+ON actions.risk_number = risks.risk_number
+WHERE actions.action_responsible = "S.Odet"
 ```
 
-
-
+# Disconnect database
+```{r}
+dbDisconnect(db_conn)
+```
 
 
 

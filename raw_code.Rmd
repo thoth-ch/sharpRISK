@@ -11,12 +11,12 @@ library(lubridate)
 library(DBI)
 library(RSQLite)
 library(glue)
-library(ggimage)
-library(magick)
+# library(ggimage)
+# library(magick)
 library(ggrepel)
 
 # test with Tesla like data
-riskdb_path <- "risks.db"
+riskdb_path <- "venus_expert2.db"
 riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 
 # test with real data (not public)
@@ -28,15 +28,6 @@ riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 # shinyApp(ui = htmlTemplate("index.html"), server)
 knitr::opts_chunk$set(connection = "riskdb_conn")
 ```
-
-```{r}
-  # riskdb_path <- "risks.db"
-  # riskdb_path <- "venus_expert.db"
-  # riskdb_path <- "venus_expert2.db"
-dbDisconnect(riskdb_conn)
-```
-
-
 
 # Global variables
 ```{r}
@@ -59,6 +50,7 @@ input$risk_probability
 input$update_risk # risk form submit risk button
 input$delete_risk # risk form delete risk button
 input$selected_action_number <- 1004
+input$action_responsible <- "S.Odet"
 ```
 
 # shiny output variables
@@ -336,6 +328,63 @@ download <- function() {
   actions <- load_actions()
   write_csv()
 }
+```
+
+# Outstanding actions
+
+```{r}
+risks <- load_risks()
+actions <- load_actions()
+actions_by_responsible <- load_actions() %>%
+  filter(action_responsible == input$action_responsible) 
+```
+
+
+```{r}
+actions_by_responsible <- function(action_responsible) {
+  riskdb_conn <- dbConnect(SQLite(), riskdb_path)
+  query <- glue(
+  "
+  SELECT actions.risk_number, risks.risk_description, actions.action_number, actions.action_responsible, actions.action_description
+  FROM actions
+  INNER JOIN risks
+  ON actions.risk_number = risks.risk_number
+  WHERE actions.action_responsible = '{action_responsible}'
+  "
+  )
+  actions_by_responsible <- dbGetQuery(riskdb_conn, query)
+  dbDisconnect(riskdb_conn)
+  actions_by_responsible
+}
+
+```
+
+test the function
+
+```{r}
+actions_by_responsible(input$action_responsible)
+```
+
+# Action status ----
+
+```{r}
+  output$action_status <- renderUI({
+    textInput(
+      width = 160,
+      inputId = "selected_action_status",
+      label = "Action Status",
+      value = get_action_status())
+  })
+  get_action_status <- function() {
+    get_action_data(input$selected_action_status, action_fields) %>%
+      pull(action_status)
+  }
+```
+
+# Inverted comma bug fix
+
+```{r}
+
 ```
 
 
