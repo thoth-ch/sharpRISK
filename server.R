@@ -2,10 +2,7 @@
 shinyServer(function(input, output) {
   
   # Database connection ----
-  # riskdb_path <- "risks.db"
-  riskdb_path <- "JR_risks.db"
-  # riskdb_path <- "venus_expert.db"
-  # riskdb_path <- "venus_expert.db"
+  riskdb_path <- "tridel.db"
   # Declare global variables ----
   risk_fields <- c("risk_number",
                    "risk_name",

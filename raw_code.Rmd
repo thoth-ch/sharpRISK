@@ -582,10 +582,10 @@ risks_colored_bw %>%
        y = "Risk Probability")
 ```
 
-# Shiny server deployment config
-```{r}
-rsconnect::setAccountInfo(name='red-datafactory', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
+# SHINY SERVER deployment config
 
+```{r}
+rsconnect::setAccountInfo(name='thoth', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
 ```
 
 # SENTIMENT ANALYSIS
