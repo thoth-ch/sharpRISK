@@ -291,9 +291,9 @@ shinyServer(function(input, output) {
   aggregate_risk_data <- reactive({
     aggregated_risks <- sapply(selected_risk_fields, 
                                function(x) {input[[x]]})
-    aggregated_risks["selected_risk_name"] <- str_replace(
+    aggregated_risks["selected_risk_name"] <- str_replace_all(
       aggregated_risks["selected_risk_name"], pattern = "'", replacement = "´")
-    aggregated_risks["selected_risk_description"] <- str_replace(
+    aggregated_risks["selected_risk_description"] <- str_replace_all(
       aggregated_risks["selected_risk_description"], pattern = "'", replacement = "´")
     aggregated_risks
   })
@@ -441,7 +441,7 @@ shinyServer(function(input, output) {
   aggregate_action_data <- reactive({
     aggregated_actions <- sapply(selected_action_fields, 
                                  function(x) {input[[x]]})
-    aggregated_actions[3] <- str_replace(
+    aggregated_actions[3] <- str_replace_all(
       aggregated_actions[3], pattern = "'", replacement = "´")
     aggregated_actions
   })

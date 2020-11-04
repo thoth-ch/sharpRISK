@@ -11,18 +11,12 @@ library(lubridate)
 library(DBI)
 library(RSQLite)
 library(glue)
-# library(ggimage)
-# library(magick)
+
 library(ggrepel)
 
 # test with Tesla like data
-riskdb_path <- "venus_expert2.db"
+riskdb_path <- "tridel.db"
 riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
-
-# test with real data (not public)
-# riskdb_path <- "../app/database/venus_expert.db"
-# heatxl_path <- "../support_files/venus_expert_risks.xlsx"
-# heat_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
 # Insert at the end of the server.R in case the ui is an html file
 # shinyApp(ui = htmlTemplate("index.html"), server)
