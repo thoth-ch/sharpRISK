@@ -1,6 +1,3 @@
-# App address
-# https://rre.svr.nestle.com:3838/RDRamalhJo/RiskApp
-# https://rre.svr.nestle.com:3838/NSTC/RiskApp
 
 # Load packages
 library(tidyverse)
@@ -15,19 +12,12 @@ library(stopwords)
 library(htmltools)
 library(DT)
 
-# source("~/ShinyApps/Style/ds_style_functions.R")
-# source("../Style/ds_style_functions.R")
-
 # **** USER INTERFACE **** ----
 shinyUI(fluidPage(
     fluidRow(
         
         includeCSS("risk_app.css"),
-        
-        # includeCSS("~/ShinyApps/Style/nstc_ds_style.css"),
-        # includeCSS("../Style/nstc_ds_style.css"),
-        # ds_header("Venus Risk Management", "Venus_Risk"),
-        
+
         # titlePanel("Risk Management App"),
         
         tabsetPanel(
@@ -124,5 +114,4 @@ shinyUI(fluidPage(
             )
         )
     )
-    # ds_footer("Venus Risk Management", "J.Ramalho", "V0.1 (beta)", "Sep.2020")
 ))
