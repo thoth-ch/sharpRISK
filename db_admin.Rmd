@@ -15,7 +15,8 @@ library(RSQLite)
 # Define connection to database (or create it if it doesn't exist)
 
 riskdb_path <- "tridel.db"
-heatxl_path <- "support_files/heatmap.xlsx"
+risksxl_path <- "bkps/2020-11-04-risksbkp.xlsx"
+actionsxl_path <- "bkps/2020-11-04-actionsbkp.xlsx"
 
 db_conn <- dbConnect(RSQLite::SQLite(), dbname = riskdb_path)
 
@@ -73,7 +74,7 @@ ORDER BY table_name, col_id
 dbWriteTable(conn = db_conn,
              append = TRUE,
              name = "risks",
-             value = read_xlsx(path = risks_path,
+             value = read_xlsx(path = risksxl_path,
                                # sheet = "risks", 
                                na = "")
              )
@@ -85,8 +86,8 @@ dbWriteTable(conn = db_conn,
 dbWriteTable(conn = db_conn,
              append = TRUE,
              name = "actions",
-             value = read_xlsx(path = heatxl_path,
-                               sheet = "actions", 
+             value = read_xlsx(path = actionsxl_path,
+                               # sheet = "actions", 
                                na = "")
              )
 ```
@@ -129,7 +130,7 @@ DELETE FROM actions
 
 ```{sql}
 DELETE FROM actions
-WHERE action_number = NA
+WHERE action_number = 1003
 ```
 
 
