@@ -1,6 +1,9 @@
 ---
 title: "raw_code"
 output: html_document
+resource_files:
+- ui.R
+- server.R
 ---
 # SETUP ----
 ```{r setup, include=FALSE}

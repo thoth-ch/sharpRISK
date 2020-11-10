@@ -15,25 +15,23 @@ library(DT)
 # **** USER INTERFACE **** ----
 shinyUI(fluidPage(
     fluidRow(
-        
-        includeCSS("risk_app.css"),
-
-        # titlePanel("Risk Management App"),
-        
+        includeCSS("www/risk_app.css"),
+        # div(p("test"),
+        #     style = "background: url('www/recycling.jpg') no-repeat fixed center;")),
+        titlePanel(
+            tags$h1("Risk Management", style = "text-align:center")),
         tabsetPanel(
             type = "tabs",
             # Heatmap tab----
             tabPanel("Heatmap",
                      column(1),
-                     column(10,
+                     column(11,
                             tags$br(),
-                            
-                            # tableOutput("table"),
-                            div(
-                                plotOutput("heatmap"),
-                                # style = "max-width: 1200px"
-                                ),
-                            DTOutput("top5risks")),
+                            div(plotOutput("heatmap"),
+                                style = "max-width: 1200px"),
+                            div(DTOutput("top5risks"),
+                                style = "max-width: 1200px")
+                            ),
                      column(1)
             ),
             # Text Analysis tab ----
