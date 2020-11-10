@@ -131,7 +131,7 @@ shinyServer(function(input, output) {
     
   })
   # Top 5 risks table ----
-  output$top5risks <- renderDataTable(
+  output$top5risks <- renderDT(
     rownames = FALSE,
     escape = TRUE,
     options = list(pageLength = 5),
@@ -248,23 +248,37 @@ shinyServer(function(input, output) {
   })
   # Risk impact ----
   # Display the impact of the selected risk
-  output$risk_impact <- renderUI({
-    numericInput(inputId = "selected_risk_impact",
-                 label = "Impact",
-                 width = 80,
-                 value = get_risk_impact())
+  # output$risk_impact <- renderUI({
+  #   numericInput(inputId = "selected_risk_impact",
+  #                label = "Impact",
+  #                width = 80,
+  #                value = get_risk_impact())
+  # })
+  output$risk_impact_slider <- renderUI({
+    sliderInput(inputId = "selected_risk_impact",
+                label = "Impact", min = 1, max = 4,
+                width = 140,
+                value = get_risk_impact()
+    )
   })
   get_risk_impact <- reactive({
     get_risk_data(input$risk_number, risk_fields) %>% pull(risk_impact)
   })
   # Risk probability ----
   # Display the probability of the selected risk
-  output$risk_probability <- renderUI({
-    numericInput(inputId = "selected_risk_probability",
-                 label = "Probability",
-                 width = 80,
-                 value = get_risk_probability())
-  })    
+  # output$risk_probability <- renderUI({
+  #   numericInput(inputId = "selected_risk_probability",
+  #                label = "Probability",
+  #                width = 80,
+  #                value = get_risk_probability())
+  # })
+  output$risk_probability_slider <- renderUI({
+    sliderInput(inputId = "selected_risk_probability",
+                label = "Probability", min = 1, max = 4,
+                width = 140,
+                value = get_risk_probability()
+    )
+  })
   get_risk_probability <- reactive({
     get_risk_data(input$risk_number, risk_fields) %>% pull(risk_probability)
   })

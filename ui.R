@@ -28,9 +28,12 @@ shinyUI(fluidPage(
                      column(10,
                             tags$br(),
                             
-                            tableOutput("table"),
-                            plotOutput("heatmap"),
-                            dataTableOutput("top5risks")),
+                            # tableOutput("table"),
+                            div(
+                                plotOutput("heatmap"),
+                                # style = "max-width: 1200px"
+                                ),
+                            DTOutput("top5risks")),
                      column(1)
             ),
             # Text Analysis tab ----
@@ -83,8 +86,8 @@ shinyUI(fluidPage(
                              ),
                              column(4,
                                     br(),
-                                    uiOutput("risk_probability"),
-                                    uiOutput("risk_impact")
+                                    uiOutput("risk_probability_slider"),
+                                    uiOutput("risk_impact_slider")
                              ))
                      ),
                      sidebarLayout(
