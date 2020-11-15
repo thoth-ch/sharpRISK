@@ -14,16 +14,20 @@ library(lubridate)
 library(DBI)
 library(RSQLite)
 library(glue)
-
 library(ggrepel)
 
-# test with Tesla like data
+library(reticulate)
+use_condaenv("/home/joao/anaconda3/envs/Rpython")
+
 riskdb_path <- "tridel.db"
 riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 
-# Insert at the end of the server.R in case the ui is an html file
-# shinyApp(ui = htmlTemplate("index.html"), server)
+# Setting up the connection to the db file to avoid adding it in every chunk:
 knitr::opts_chunk$set(connection = "riskdb_conn")
+
+# The code below has to be inserted at the end of the server.R file
+# in case the ui becomes  an html file
+# shinyApp(ui = htmlTemplate("index.html"), server)
 ```
 
 # SHINY APP
@@ -38,15 +42,6 @@ shiny::runApp(appDir = "~/Documents/sharpRISK")
 
 ```{r}
 rsconnect::setAccountInfo(name='thoth', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
-```
-
-# PYTHON INTEGRATION
-
-## Data loading in Python
-```{python}
-from pathlib import Path
-import re
-import pandas as pd
 ```
 
 # APP R FUNCTIONS RAW CODE
