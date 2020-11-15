@@ -5,7 +5,7 @@ resource_files:
 - ui.R
 - server.R
 ---
-# SETUP ----
+# RMD SETUP
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -26,7 +26,32 @@ riskdb_conn <- dbConnect(SQLite(), dbname = riskdb_path)
 knitr::opts_chunk$set(connection = "riskdb_conn")
 ```
 
-# Global variables
+# SHINY APP
+
+## Run shiny app
+```{r}
+shiny::runApp(appDir = "~/Documents/sharpRISK")
+```
+# SHINY SERVER
+
+## Deployment config
+
+```{r}
+rsconnect::setAccountInfo(name='thoth', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
+```
+
+# PYTHON INTEGRATION
+
+## Data loading in Python
+```{python}
+from pathlib import Path
+import re
+import pandas as pd
+```
+
+# APP R FUNCTIONS RAW CODE
+
+## Global variables
 ```{r}
 risk_fields <- c("risk_number",
                  "risk_name",
@@ -36,7 +61,7 @@ risk_fields <- c("risk_number",
 )
 ```
 
-# shiny input variables
+## shiny input variables
 ```{r}
 input <- list()
 input$risk_number <- 1
@@ -50,7 +75,7 @@ input$selected_action_number <- 1004
 input$action_responsible <- "S.Odet"
 ```
 
-# shiny output variables
+## shiny output variables
 ```{r}
 input$selected_risk_number
 input$selected_risk_name
@@ -59,9 +84,9 @@ input$selected_risk_impact
 input$selected_risk_probability
 ```
 
-# DATA LOADING AND SAVING
+## Data loading and saving
 
-# load risks
+## load risks
 ```{r}
 load_risks <- function() {
   riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -78,7 +103,7 @@ risks <- load_risks()
 risks
 load_risks() %>% pull(risk_number)
 ```
-# top 5 risks table
+## top 5 risks table
 ```{r}
 risks <- load_risks() %>% 
             mutate(criticality = risk_probability * risk_impact) %>%
@@ -91,7 +116,7 @@ risks
 
 
 
-# load actions
+## load actions
 ```{r}
     load_actions <- function() {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -108,7 +133,8 @@ testing the function
 actions <- load_actions()
 load_actions() %>% pull(action_number)
 ```
-# load actions by risk
+
+## load actions by risk
 
 ```{r}
     load_actions_by_risk <- function() {
@@ -127,7 +153,7 @@ test <- load_actions_by_risk()
 test %>% pull(action_number)
 ```
 
-# converting date
+## converting date
 ```{r}
 actions <- load_actions()
 
@@ -136,7 +162,7 @@ actions <- actions %>%
 actions
 ```
 
-# get risk data
+## get risk data
 ```{r}
 load_risk <- function(number, risk_fields) {
   riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -169,7 +195,7 @@ risk_data$risk_number
 risk_data$risk_description
 ```
 
-# aggregate risk form data
+## aggregate risk form data
 ```{r}
 aggregate_risk_data <- reactive({
         fields <- c("risk_name", "risk_number")
@@ -197,7 +223,7 @@ risk_test_vector <- aggregate_risk_data(input)
 risk_test_vector
 ```
 
-# save risks sql instruction
+## save risks sql instruction
 ```{r}
 save_risk <- function(x) {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -218,7 +244,7 @@ testing the function
 save_risk(risk_test_vector)
 ```
 
-# select risk sql instruction
+## select risk sql instruction
 ```{r}
 delete_risk <- function() {
         riskdb_conn <- dbConnect(SQLite(), riskdb_path)
@@ -237,7 +263,7 @@ test the function
 delete_risk()
 ```
 
-# update risk
+## update risk
 ```{r}
     # aggregate risk form data
     selected_risk_fields <- c("risk_number",
@@ -277,7 +303,8 @@ testing the function
 ```{r}
 update_risk(5)
 ```
-# Risk list ----
+
+## Risk list ----
 ```{r}
     output$risksDT <- DT::renderDataTable({
         input$update_risk | input$delete_risk
@@ -285,7 +312,7 @@ update_risk(5)
     })
 ```
 
-# Action list
+## Action list
 ```{r}
     output$actionsDT <- DT::renderDataTable({
         # input$update_action | input$delete_action
@@ -293,7 +320,7 @@ update_risk(5)
     })
 ```
 
-# Create new action
+## Create new action
 
 ```{r}
     create_action <- function() {
@@ -305,7 +332,7 @@ update_risk(5)
     }
 ```
 
-# Delete action
+## Delete action
 
 ```{r}
     delete_action <- function() {
@@ -317,7 +344,7 @@ update_risk(5)
     }
 ```
 
-# Download
+## Download
 
 ```{r}
 download <- function() {
@@ -327,7 +354,7 @@ download <- function() {
 }
 ```
 
-# Outstanding actions
+## Outstanding actions
 
 ```{r}
 risks <- load_risks()
@@ -362,7 +389,7 @@ test the function
 actions_by_responsible(input$action_responsible)
 ```
 
-# Action status ----
+## Action status ----
 
 ```{r}
   output$action_status <- renderUI({
@@ -378,16 +405,10 @@ actions_by_responsible(input$action_responsible)
   }
 ```
 
-# Inverted comma bug fix
+## Inverted comma bug fix
 
-```{r}
-
-```
-
-
-
-# PLOTS
-# Heatmap plot with image background
+## Plots
+## Heatmap plot with image background
 ```{r}
 risks <- load_risks()
 
@@ -411,7 +432,7 @@ ggbackground(heatmap_ggplot, "heatmap_borders.png")
   
 ```
 
-# Heatmap raw grid made of tiles
+## Heatmap raw grid made of tiles
 
 ```{r}
 heatmap_tiles <- tribble(
@@ -446,7 +467,8 @@ ggplot() +
   
 ```
 
-# Heatmap plot (tiles + black text)
+## Heatmap plot (tiles + black text)
+
 ```{r}
 risks <- load_risks()
 
@@ -470,7 +492,8 @@ risks %>%
        y = "Risk Probability")
 ```
 
-# Risk text color function (yellow, orange, red)
+## Risk text color function (yellow, orange, red)
+
 ```{r}
 risk_color <- function(risk_impact, risk_probability) {
   r_color <- case_when(
@@ -498,8 +521,8 @@ risks_colored <- risks %>%
   mutate(r_color = risk_color(risk_impact, risk_probability))
 ```
 
+## Risk plot with (colored text)
 
-# Risk plot with (colored text)
 ```{r}
 risks <- load_risks()
 
@@ -522,7 +545,8 @@ risks_colored %>%
        y = "Risk Probability")
 ```
 
-# Risk text color function (black and white)
+## Risk text color function (black and white)
+
 ```{r}
 risk_color_bw <- function(risk_impact, risk_probability) {
   r_color <- case_when(
@@ -550,8 +574,8 @@ risks_colored_bw <- risks %>%
   mutate(r_color = risk_color_bw(risk_impact, risk_probability))
 ```
 
+## Risk plot (tiles + black and white risks)
 
-# Risk plot (tiles + black and white risks)
 ```{r}
 risks <- load_risks()
 
@@ -579,13 +603,7 @@ risks_colored_bw %>%
        y = "Risk Probability")
 ```
 
-# SHINY SERVER deployment config
-
-```{r}
-rsconnect::setAccountInfo(name='thoth', token='52DA421CC5E0FCD672FAFAE3B8FDB76F', secret='81kdlYmCfDkr9WkWasxd8fNfy5XQtBDot341q5m2')
-```
-
-# SENTIMENT ANALYSIS
+## Sentiment analysis
 
 ## Word count
 
