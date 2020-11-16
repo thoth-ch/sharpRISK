@@ -541,6 +541,19 @@ shinyServer(function(input, output) {
     options = list(pageLength = 5),
     actions_by_responsible(input$selected_action_responsible2)
   )
-  
+  # Actions by responsible plot
+  output$action_resp_count <- renderPlot({
+    source_python("rpy_prototype.py")
+    action_responsibles <- unlist(action_responsibles_py) %>%
+      as_tibble_col(column_name = "Responsible")
+
+    action_responsibles %>%
+      mutate(Responsible = fct_infreq(Responsible)) %>%
+      ggplot(aes(x = Responsible)) +
+      geom_bar(width = 0.5, fill = "cadetblue4") +
+      theme_light() +
+      labs(title = "Count of actions by responsible")
+
+  })
   
 })

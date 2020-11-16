@@ -11,6 +11,8 @@ library(tidytext)
 library(stopwords)
 library(htmltools)
 library(DT)
+library(reticulate)
+use_condaenv("/home/joao/anaconda3/envs/Rpython")
 
 # **** USER INTERFACE **** ----
 shinyUI(fluidPage(
@@ -38,7 +40,8 @@ shinyUI(fluidPage(
             tabPanel("Text Analysis",
                      tags$br(),
                      column(6,
-                            plotOutput("top10words")
+                            plotOutput("top10words"),
+                            plotOutput("action_resp_count")
                      ),
                      column(6)
                      

@@ -5,9 +5,6 @@ account: thoth
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2760391
-bundleId: 3823256
+bundleId: 3868283
 url: https://thoth.shinyapps.io/sharprisk/
-when: 1604571418.59635
-asMultiple: FALSE
-asStatic: FALSE
-ignoredFiles: _rawcode.R|_riskupdatetab_notes|bug_list|db_admin.Rmd|footer.html|raw_code.Rmd|README.md|risks.db|style.css|tesla.db|test|test.xlsx|texte_tridel|www/index.html|bkps|support_files
+when: 1605557660.60291
