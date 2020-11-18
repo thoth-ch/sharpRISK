@@ -12,7 +12,7 @@ library(stopwords)
 library(htmltools)
 library(DT)
 library(reticulate)
-use_condaenv("/home/joao/anaconda3/envs/Rpython")
+# use_condaenv("/home/joao/anaconda3/envs/Rpython")
 
 # **** USER INTERFACE **** ----
 shinyUI(fluidPage(

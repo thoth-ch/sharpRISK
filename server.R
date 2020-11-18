@@ -1,8 +1,9 @@
 # **** BACKEND APPLICATION **** ----
 shinyServer(function(input, output) {
   
-  # Database connection ----
+  # Helper files and Database connection ----
   riskdb_path <- "tridel.db"
+  source_python("helper.py")
   # Declare global variables ----
   risk_fields <- c("risk_number",
                    "risk_name",
@@ -149,8 +150,8 @@ shinyServer(function(input, output) {
     risks <- load_risks()
     actions <- load_actions()
     risks_tidy <- risks$risk_description %>% 
-      # as.tibble required as the loading provided only a chr vector
-      as.tibble() %>% 
+      # as_tibble required as the loading provided only a chr vector
+      as_tibble() %>% 
       mutate(line = row_number()) %>%
       # converting everything into words
       unnest_tokens(input = value, output = word) %>%
@@ -158,8 +159,8 @@ shinyServer(function(input, output) {
              !is.na(word)) %>%
       select(word)
     actions_tidy <- actions$action_description %>% 
-      # as.tibble required as the loading provided only a chr vector
-      as.tibble() %>% 
+      # as_tibble required as the loading provided only a chr vector
+      as_tibble() %>% 
       mutate(line = row_number()) %>%
       # converting everything into words
       unnest_tokens(input = value, output = word) %>%
@@ -543,7 +544,6 @@ shinyServer(function(input, output) {
   )
   # Actions by responsible plot
   output$action_resp_count <- renderPlot({
-    source_python("rpy_prototype.py")
     action_responsibles <- unlist(action_responsibles_py) %>%
       as_tibble_col(column_name = "Responsible")
 
