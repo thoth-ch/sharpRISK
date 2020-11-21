@@ -142,11 +142,12 @@ shinyServer(function(input, output) {
       arrange(desc(criticality)) %>%
       select(risk_number, risk_name, risk_probability, risk_impact)
   )
-  # TEXT ANALYSIS ----
+
+# TEXT ANALYSIS ----
   output$top10words <- renderPlot({
     input$save_risk | input$delete_risk | 
       input$save_action | input$delete_action
-    # Word count ----
+    ## Word count ----
     risks <- load_risks()
     actions <- load_actions()
     risks_tidy <- risks$risk_description %>% 
@@ -190,6 +191,65 @@ shinyServer(function(input, output) {
            y = "Number of occurrences",
            x = "")
   })
+  ## Correlated words ----
+  output$actions_corr <- renderPlot({
+    actions_tidy <- actions %>% 
+      select(risk_number, action_description) %>%
+      as_tibble() %>% 
+      unnest_tokens(input = action_description, output = word) %>%
+      filter(!word %in% get_stopwords(language = "fr")$word,
+             !is.na(word))
+    actions_cors <- actions_tidy %>% 
+      add_count(word) %>% 
+      filter(n > stats::quantile(n, 0.7)) %>% 
+      pairwise_cor(word, risk_number, sort = TRUE)
+    
+    set.seed(123)
+    
+    actions_graph <- actions_cors %>%
+      filter(correlation > 0.5,
+             !str_detect(item1, "\\d"),
+             !str_detect(item2, "\\d")) %>% 
+      graph_from_data_frame()
+    
+    ## with ggraph
+    actions_graph %>%
+      ggraph(layout = "fr") +
+      geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+      geom_node_point(color = "lightblue", size = 5) +
+      geom_node_text(aes(label = name), repel = TRUE) +
+      theme_void() + 
+      labs(x = "",
+           y = "",
+           title = "Commonly Occuring Correlated Words",
+           subtitle = "Per risk correlation higher than 0.5")
+    
+    ## with forceNetworks
+    # graph <- as_tbl_graph(actions_graph) %>%
+    #   activate(nodes) %>% 
+    #   mutate(group = group_optimal())
+    # nodes_tibble <- graph %>%
+    #   activate(nodes) %>%
+    #   as_tibble()
+    # edges_tibble <- graph %>%
+    #   activate(edges) %>%
+    #   as_tibble() %>%
+    #   mutate_all(~ . - 1)
+    # forceNetwork(Links = edges_tibble,
+    #              Nodes = nodes_tibble,
+    #              Source = "from",
+    #              Target = "to",
+    #              NodeID = "name",
+    #              Group = "group",
+    #              opacity = 0.8,
+    #              linkColour = "#EEEEEE",
+    #              zoom = TRUE,
+    #              legend = FALSE,
+    #              fontSize = 12,
+    #              bounded = TRUE)
+  })
+  
+  
   # RISK MANAGEMENT ----
   # Get risk data ----
   get_risk_data <- function(number, risk_fields) {

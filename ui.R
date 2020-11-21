@@ -12,6 +12,17 @@ library(stopwords)
 library(htmltools)
 library(DT)
 library(reticulate)
+library(pdftools)
+library(hunspell)
+library(tidytext)
+library(widyr)
+library(gridExtra)
+library(scales)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(networkD3)
+
 # use_condaenv("/home/joao/anaconda3/envs/Rpython")
 
 # **** USER INTERFACE **** ----
@@ -40,10 +51,10 @@ shinyUI(fluidPage(
             tabPanel("Text Analysis",
                      tags$br(),
                      column(6,
-                            plotOutput("top10words"),
-                            plotOutput("action_resp_count")
+                            plotOutput("top10words")
                      ),
-                     column(6)
+                     column(3,
+                            plotOutput("actions_corr"))
                      
             ),
             # Outstanding actions tab ----
@@ -53,6 +64,7 @@ shinyUI(fluidPage(
                                       uiOutput("action_responsible2")
                          ),
                          mainPanel(
+                             plotOutput("action_resp_count"),
                              DTOutput("actions_by_responsible")
                          )
                      )
