@@ -27,12 +27,16 @@ library(networkD3)
 
 # **** USER INTERFACE **** ----
 shinyUI(fluidPage(
+    
+    tags$script(src = "javascript.js"),
+    includeCSS("www/risk_app.css"),
+    
     fluidRow(
-        includeCSS("www/risk_app.css"),
+        
         # div(p("test"),
         #     style = "background: url('www/recycling.jpg') no-repeat fixed center;")),
         titlePanel(
-            tags$h1("Risk Management", style = "text-align:center")),
+            tags$h1("tree", style = "text-align:center")),
         tabsetPanel(
             type = "tabs",
             # Heatmap tab----
